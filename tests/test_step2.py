@@ -2,7 +2,8 @@ import os
 import pytest
 from openai import AsyncOpenAI
 
-from app.infrastructure.image_to_text_ingestion import step2_generate_image_captions
+from app.infrastructure.image_to_text_ingestion import step2_generate_image_captions, step3_merge_context, \
+    step4_chunk_and_embed
 
 
 @pytest.mark.asyncio
@@ -24,7 +25,6 @@ async def test_step2_generate_image_captions():
     )
 
     captions = await step2_generate_image_captions(images, client)
-
     assert image_path in captions
     assert len(captions[image_path]) > 20
 
