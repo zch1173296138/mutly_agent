@@ -1,8 +1,9 @@
 import os
 import json
+import math
 import logging
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import chromadb
 from openai import AsyncOpenAI
@@ -22,8 +23,271 @@ def _project_root() -> Path:
       app/infrastructure/query_embedding.py
     """
     return Path(__file__).resolve().parents[2]
+def _parse_json_array(text: str) -> List[str]:
+    """
+    尽量从模型输出里解析 JSON 数组。
+    兼容 ```json [...] ``` 这种情况。
+    """
+    text = (text or "").strip()
+
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.startswith("json"):
+            text = text[4:].strip()
+
+    start = text.find("[")
+    end = text.rfind("]")
+
+    if start >= 0 and end >= start:
+        text = text[start:end + 1]
+
+    try:
+        data = json.loads(text)
+    except Exception:
+        return []
+
+    if not isinstance(data, list):
+        return []
+
+    return [str(x).strip() for x in data if str(x).strip()]
 
 
+async def rewrite_search_queries(
+    query: str,
+    max_queries: int = 4,
+) -> List[str]:
+    """
+    把用户问题改写成多个检索 query。
+    重点解决：
+      1. 中文问题 vs 英文论文内容不匹配
+      2. 用户问题太口语，和论文术语不匹配
+      3. 单 query 召回太窄
+    """
+    chat_model = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+
+
+    prompt = f"""
+你是一个论文 RAG 检索 query 改写器。
+
+用户原始问题：
+{query}
+
+请生成 {max_queries} 个适合向量检索论文 chunk 的 query。
+
+要求：
+1. 第一个 query 尽量保留原始问题语义。
+2. 如果原问题是中文，请生成英文论文术语版本。
+3. 覆盖可能出现在论文中的不同表达方式。
+4. 不要回答问题，只输出 query。
+5. 只输出 JSON 数组，不要输出其他解释。
+
+示例输出：
+["original meaning query", "technical term query", "method-related query", "experiment-related query"]
+""".strip()
+
+    try:
+        response = await call_llm(
+            model=chat_model,
+            messages=[
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+            max_tokens=400,
+        )
+
+        content = response.get("content","")
+        rewritten = _parse_json_array(content)
+
+        queries: List[str] = []
+
+        if query.strip():
+            queries.append(query.strip())
+
+        for q in rewritten:
+            if q not in queries:
+                queries.append(q)
+
+        return queries[:max_queries]
+
+    except Exception:
+        logger.exception("query rewrite 失败，回退到原始 query")
+        return [query]
+
+
+def rrf_fuse(
+    ranked_lists: List[List[Dict[str, Any]]],
+    rrf_k: int = 60,
+) -> List[Dict[str, Any]]:
+    """
+    Reciprocal Rank Fusion.
+
+    适合融合：
+      query1 的向量检索结果
+      query2 的向量检索结果
+      query3 的向量检索结果
+      BM25 的检索结果
+      section-title 的检索结果
+    """
+    fused: Dict[str, Dict[str, Any]] = {}
+
+    for ranked_list in ranked_lists:
+        for rank, item in enumerate(ranked_list, start=1):
+            chunk_id = item.get("chunk_id")
+
+            if not chunk_id:
+                continue
+
+            rrf_score = 1.0 / (rrf_k + rank)
+
+            if chunk_id not in fused:
+                new_item = dict(item)
+                new_item["rrf_score"] = rrf_score
+                new_item["rrf_hits"] = 1
+                fused[chunk_id] = new_item
+            else:
+                fused[chunk_id]["rrf_score"] += rrf_score
+                fused[chunk_id]["rrf_hits"] += 1
+
+                # 保留原始 Chroma score 更高的那份文本和 metadata
+                if item.get("score", 0.0) > fused[chunk_id].get("score", 0.0):
+                    old_rrf_score = fused[chunk_id]["rrf_score"]
+                    old_rrf_hits = fused[chunk_id]["rrf_hits"]
+
+                    new_item = dict(item)
+                    new_item["rrf_score"] = old_rrf_score
+                    new_item["rrf_hits"] = old_rrf_hits
+
+                    fused[chunk_id] = new_item
+
+    results = list(fused.values())
+
+    results.sort(
+        key=lambda x: (
+            x.get("rrf_score", 0.0),
+            x.get("rrf_hits", 0),
+            x.get("score", 0.0),
+        ),
+        reverse=True,
+    )
+
+    return results
+def _cosine_similarity(a: List[float], b: List[float]) -> float:
+    dot = 0.0
+    norm_a = 0.0
+    norm_b = 0.0
+
+    for x, y in zip(a, b):
+        dot += x * y
+        norm_a += x * x
+        norm_b += y * y
+
+    if norm_a <= 0.0 or norm_b <= 0.0:
+        return 0.0
+
+    return dot / (math.sqrt(norm_a) * math.sqrt(norm_b))
+
+
+def _min_max_normalize(values: List[float]) -> List[float]:
+    if not values:
+        return []
+
+    min_v = min(values)
+    max_v = max(values)
+
+    if abs(max_v - min_v) < 1e-8:
+        return [0.5 for _ in values]
+
+    return [(v - min_v) / (max_v - min_v) for v in values]
+
+
+async def embed_candidate_texts(candidates: List[Dict[str, Any]]) -> List[List[float]]:
+    texts = []
+
+    for item in candidates:
+        section_title = item.get("section_title", "")
+        text = item.get("text", "")
+
+        # 截断，避免 embedding 太长
+        texts.append(f"{section_title}\n{text}"[:3000])
+
+    if not texts:
+        return []
+
+    return await embed_queries(texts)
+
+
+def mmr_select(
+    candidates: List[Dict[str, Any]],
+    candidate_embeddings: List[List[float]],
+    relevance_scores: List[float],
+    top_k: int,
+    lambda_mult: float = 0.65,
+) -> List[Dict[str, Any]]:
+    """
+    MMR 最终选择。
+
+    lambda_mult:
+      越大越重视相关性；
+      越小越重视多样性。
+
+    推荐：
+      论文 QA：0.65
+      方法总结：0.60
+      精确问答：0.75
+    """
+    if not candidates:
+        return []
+
+    if len(candidates) <= top_k:
+        return candidates
+
+    relevance_scores = _min_max_normalize(relevance_scores)
+
+    selected_indices: List[int] = []
+    remaining_indices = list(range(len(candidates)))
+
+    while remaining_indices and len(selected_indices) < top_k:
+        best_idx: Optional[int] = None
+        best_score = -1e9
+
+        for idx in remaining_indices:
+            relevance = relevance_scores[idx]
+
+            if not selected_indices:
+                diversity_penalty = 0.0
+            else:
+                diversity_penalty = max(
+                    _cosine_similarity(
+                        candidate_embeddings[idx],
+                        candidate_embeddings[selected_idx],
+                    )
+                    for selected_idx in selected_indices
+                )
+
+            mmr_score = (
+                lambda_mult * relevance
+                - (1.0 - lambda_mult) * diversity_penalty
+            )
+
+            if mmr_score > best_score:
+                best_score = mmr_score
+                best_idx = idx
+
+        if best_idx is None:
+            break
+
+        selected_indices.append(best_idx)
+        remaining_indices.remove(best_idx)
+
+    selected = []
+
+    for rank, idx in enumerate(selected_indices, start=1):
+        item = dict(candidates[idx])
+        item["mmr_rank"] = rank
+        item["mmr_relevance_score"] = float(relevance_scores[idx])
+        selected.append(item)
+
+    return selected
 def _get_chroma_collection(collection_name: str = "paper_chunks"):
     """
     获取 Chroma collection。
@@ -71,10 +335,9 @@ def _safe_preview(text: str, max_chars: int = 500) -> str:
     return text[:max_chars] + "..."
 
 
-async def embed_query(query: str) -> List[float]:
+async def embed_queries(queries: List[str]) -> List[List[float]]:
     """
-    对用户 query 做 embedding。
-    必须和 step4_chunk_and_embed 使用同一个 embedding model。
+    批量生成 query / chunk embedding。
     """
     embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
@@ -85,31 +348,36 @@ async def embed_query(query: str) -> List[float]:
 
     response = await client.embeddings.create(
         model=embedding_model,
-        input=[query],
+        input=queries,
     )
 
-    return response.data[0].embedding
+    return [item.embedding for item in response.data]
+
+
+async def embed_query(query: str) -> List[float]:
+    embeddings = await embed_queries([query])
+    return embeddings[0]
 
 
 async def retrieve_paper_context(
     query: str,
-    top_k: int = 5,
+    top_k: int = 6,
+    fetch_k: int = 30,
+    fused_fetch_k: int = 40,
     collection_name: str = "",
+    use_query_rewrite: bool = True,
+    use_rrf: bool = True,
+    use_mmr: bool = True,
 ) -> Dict[str, Any]:
     """
-    Query Embedding + Chroma 检索。
+    改进版论文上下文检索。
 
-    输入:
-      query: 用户问题
-      top_k: 返回前几个 chunk
-      collection_name: Chroma collection 名称，默认读 env CHROMA_COLLECTION
-
-    输出:
-      {
-        "query": "...",
-        "collection_name": "paper_chunks",
-        "results": [...]
-      }
+    流程：
+      query
+        -> query rewrite
+        -> multi-query Chroma fetch_k
+        -> RRF 融合
+        -> MMR 选择最终 top_k
     """
     if not query or not query.strip():
         return {
@@ -122,58 +390,133 @@ async def retrieve_paper_context(
     collection_name = collection_name or os.getenv("CHROMA_COLLECTION", "paper_chunks")
 
     logger.info(
-        f"开始 Chroma 检索论文上下文: "
-        f"query={query}, top_k={top_k}, collection_name={collection_name}"
+        f"开始增强检索: query={query}, top_k={top_k}, fetch_k={fetch_k}, "
+        f"fused_fetch_k={fused_fetch_k}, collection_name={collection_name}, "
+        f"use_query_rewrite={use_query_rewrite}, use_rrf={use_rrf}, use_mmr={use_mmr}"
     )
 
-    query_embedding = await embed_query(query)
     collection = _get_chroma_collection(collection_name)
 
-    result = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
+    if use_query_rewrite:
+        search_queries = await rewrite_search_queries(query, max_queries=4)
+    else:
+        search_queries = [query]
+
+    query_embeddings = await embed_queries(search_queries)
+    main_query_embedding = query_embeddings[0]
+
+    raw_result = collection.query(
+        query_embeddings=query_embeddings,
+        n_results=fetch_k,
+        include=["documents", "metadatas", "distances", "embeddings"],
     )
 
-    ids = result.get("ids", [[]])[0]
-    documents = result.get("documents", [[]])[0]
-    metadatas = result.get("metadatas", [[]])[0]
-    distances = result.get("distances", [[]])[0]
+    all_ids = raw_result.get("ids", [])
+    all_documents = raw_result.get("documents", [])
+    all_metadatas = raw_result.get("metadatas", [])
+    all_distances = raw_result.get("distances", [])
+    all_embeddings = raw_result.get("embeddings", [])
 
-    results: List[Dict[str, Any]] = []
+    ranked_lists: List[List[Dict[str, Any]]] = []
 
-    for i in range(len(ids)):
-        metadata = metadatas[i] or {}
-        distance = distances[i]
+    for q_idx, search_query in enumerate(search_queries):
+        ids = all_ids[q_idx] if q_idx < len(all_ids) else []
+        documents = all_documents[q_idx] if q_idx < len(all_documents) else []
+        metadatas = all_metadatas[q_idx] if q_idx < len(all_metadatas) else []
+        distances = all_distances[q_idx] if q_idx < len(all_distances) else []
+        embeddings = all_embeddings[q_idx] if q_idx < len(all_embeddings) else []
 
-        image_paths = _safe_json_loads(metadata.get("image_paths"), [])
-        images = _safe_json_loads(metadata.get("images"), [])
-        headers = _safe_json_loads(metadata.get("headers"), {})
+        ranked_list: List[Dict[str, Any]] = []
 
-        # hnsw:space=cosine 时，distance 越小越相关
-        # 这里转成一个粗略 score，方便展示
-        score = 1.0 - float(distance)
+        for i in range(len(ids)):
+            metadata = metadatas[i] or {}
+            distance = float(distances[i])
 
-        results.append({
-            "score": score,
-            "distance": float(distance),
-            "chunk_id": metadata.get("chunk_id", ids[i]),
-            "chunk_index": metadata.get("chunk_index", -1),
-            "section_title": metadata.get("section_title", ""),
-            "headers": headers,
-            "text": documents[i],
-            "image_paths": image_paths,
-            "images": images,
-            "char_count": metadata.get("char_count", 0),
-        })
+            image_paths = _safe_json_loads(metadata.get("image_paths"), [])
+            images = _safe_json_loads(metadata.get("images"), [])
+            headers = _safe_json_loads(metadata.get("headers"), {})
 
-    logger.info(f"Chroma 检索完成: hit={len(results)}")
+            chunk_id = metadata.get("chunk_id", ids[i])
+
+            # cosine distance 越小越相关
+            score = 1.0 - distance
+
+            embedding = None
+            if embeddings is not None and i < len(embeddings):
+                embedding = embeddings[i]
+
+            item = {
+                "score": float(score),
+                "distance": distance,
+                "chunk_id": chunk_id,
+                "chunk_index": metadata.get("chunk_index", -1),
+                "section_title": metadata.get("section_title", ""),
+                "headers": headers,
+                "text": documents[i],
+                "image_paths": image_paths,
+                "images": images,
+                "char_count": metadata.get("char_count", 0),
+                "matched_query": search_query,
+                "matched_query_index": q_idx,
+                "embedding": embedding,
+            }
+
+            ranked_list.append(item)
+
+        ranked_lists.append(ranked_list)
+
+    if use_rrf:
+        candidates = rrf_fuse(ranked_lists, rrf_k=60)
+    else:
+        # 不用 RRF 时，直接合并去重，按向量分数排序
+        merged: Dict[str, Dict[str, Any]] = {}
+
+        for ranked_list in ranked_lists:
+            for item in ranked_list:
+                chunk_id = item.get("chunk_id")
+                if not chunk_id:
+                    continue
+
+                old = merged.get(chunk_id)
+                if old is None or item.get("score", 0.0) > old.get("score", 0.0):
+                    merged[chunk_id] = item
+
+        candidates = list(merged.values())
+        candidates.sort(key=lambda x: x.get("score", 0.0), reverse=True)
+
+    candidates = candidates[:fused_fetch_k]
+
+    if use_mmr:
+        final_results = mmr_select(
+            query_embedding=main_query_embedding,
+            candidates=candidates,
+            top_k=top_k,
+            lambda_mult=0.65,
+        )
+    else:
+        final_results = candidates[:top_k]
+
+    # 不要把 embedding 返回给前端/LLM，太大
+    for item in final_results:
+        item.pop("embedding", None)
+
+    logger.info(
+        f"增强检索完成: rewrite_queries={len(search_queries)}, "
+        f"ranked_lists={len(ranked_lists)}, candidates={len(candidates)}, "
+        f"final={len(final_results)}"
+    )
 
     return {
         "query": query,
+        "search_queries": search_queries,
         "collection_name": collection_name,
         "top_k": top_k,
-        "results": results,
+        "fetch_k": fetch_k,
+        "fused_fetch_k": fused_fetch_k,
+        "use_query_rewrite": use_query_rewrite,
+        "use_rrf": use_rrf,
+        "use_mmr": use_mmr,
+        "results": final_results,
     }
 
 
@@ -257,7 +600,9 @@ async def answer_with_retrieved_context(
 
 async def ask_paper_agent_core(
     query: str,
-    top_k: int = 5,
+    top_k: int = 6,
+    fetch_k: int = 30,
+    fused_fetch_k: int = 40,
     collection_name: str = "",
 ) -> Dict[str, Any]:
     """
@@ -276,7 +621,12 @@ async def ask_paper_agent_core(
         retrieved = await retrieve_paper_context(
             query=query,
             top_k=top_k,
+            fetch_k=fetch_k,
+            fused_fetch_k=fused_fetch_k,
             collection_name=collection_name,
+            use_query_rewrite=True,
+            use_rrf=True,
+            use_mmr=True,
         )
     except Exception as e:
         logger.exception("论文检索失败")
@@ -316,6 +666,11 @@ async def ask_paper_agent_core(
             "chunk_index": item.get("chunk_index", -1),
             "score": item.get("score", -1),
             "distance": item.get("distance", -1),
+            "rrf_score": item.get("rrf_score", None),
+            "rrf_hits": item.get("rrf_hits", None),
+            "mmr_rank": item.get("mmr_rank", None),
+            "mmr_relevance": item.get("mmr_relevance", None),
+            "matched_query": item.get("matched_query", ""),
             "section_title": item.get("section_title", ""),
             "image_paths": item.get("image_paths", []),
             "preview": _safe_preview(item.get("text", ""), max_chars=500),
