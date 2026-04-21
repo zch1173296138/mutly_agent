@@ -103,6 +103,7 @@ class LLMClient:
         tool_choice: Optional[str] = None,
         temperature: Optional[float] = None,
         model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
     ) -> Dict[str, Any]:
         logger.debug("模型请求: %s", {"messages": messages, "tools": tools, "model": model or self._model})
         request_payload: Dict[str, Any] = {
@@ -113,6 +114,8 @@ class LLMClient:
         }
         if temperature is not None:
             request_payload["temperature"] = temperature
+        if max_tokens is not None:
+            request_payload["max_tokens"] = max_tokens
 
         try:
             resp = await self._client.chat.completions.create(**request_payload)
@@ -164,6 +167,7 @@ class LLMClient:
         tool_choice: Optional[str] = None,
         temperature: Optional[float] = None,
         model: Optional[str] = None,
+        max_tokens: Optional[int] = None,
     ) -> AsyncGenerator[Dict[str, str], None]:
         """流式调用 LLM，逐 token yield {"thinking": str, "content": str, "done": bool}。
 
@@ -180,6 +184,8 @@ class LLMClient:
             request_payload["tool_choice"] = tool_choice or "auto"
         if temperature is not None:
             request_payload["temperature"] = temperature
+        if max_tokens is not None:
+            request_payload["max_tokens"] = max_tokens
 
         try:
             stream = await self._client.chat.completions.create(**request_payload)

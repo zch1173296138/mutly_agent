@@ -7,6 +7,7 @@ from openai import AsyncOpenAI
 from app.rag.embedding_tool import step1_extract_layout, step2_generate_image_captions, \
     step3_merge_context, step4_chunk_and_embed
 from app.rag.query_embedding import ask_paper_agent_core, retrieve_paper_context
+from app.llm.wrapper import call_llm
 import asyncio
 PROXY_BYPASS = {"http": None, "https": None}
 

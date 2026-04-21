@@ -17,6 +17,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from app.llm.prompt_manager import render
+from app.llm.wrapper import call_llm
 from dotenv import load_dotenv
 load_dotenv()
 # 配置日志
@@ -243,8 +244,7 @@ async def step1_extract_layout(pdf_path: str) -> Dict:
     return await asyncio.to_thread(_sync_extract)
 
 async def step2_generate_image_captions(
-    images: List[Dict],
-    vlm_client: AsyncOpenAI
+    images: List[Dict]
 ) -> Dict[str, str]:
     """
     Step 2: 视觉大模型 (VLM) 描述生成 (Captioning)
@@ -306,14 +306,14 @@ async def step2_generate_image_captions(
                         f"({img_id}, attempt={attempt}/{max_retries}): {img_path}"
                     )
 
-                    response = await vlm_client.chat.completions.create(
+                    response = await call_llm(
                         model=model,
                         messages=[{"role": "user","content": [{"type": "text","text": prompt,},{"type": "image_url","image_url": {"url": data_url,},},],}],
                         temperature=0.2,
                         max_tokens=1200,
                     )
 
-                    caption = response.choices[0].message.content
+                    caption = response.get("content", "")
 
                     if not caption:
                         raise RuntimeError("VLM 返回空 caption")

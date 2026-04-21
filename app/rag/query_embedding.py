@@ -8,6 +8,9 @@ import chromadb
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
+from app.llm import call_llm
+from app.llm.prompt_manager import render
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -229,43 +232,22 @@ async def answer_with_retrieved_context(
 
     chat_model = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
 
-    client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None,
-    )
 
-    system_prompt = """
-你是一个论文阅读 Agent，负责基于检索到的论文片段回答用户问题。
+    system_prompt = render("rag_qa_system")
 
-要求：
-1. 只能基于给定上下文回答，不要编造论文中没有的信息。
-2. 如果上下文不足，请明确说“当前检索上下文不足以确定”。
-3. 回答要结构化，适合科研阅读。
-4. 回答中使用 [来源 1]、[来源 2] 这样的格式标注依据。
-5. 如果来源里有 image_paths，说明这些图片是相关图表证据。
-""".strip()
+    user_prompt = render("rag_qa_user",query=query,context_text=context_text)
 
-    user_prompt = f"""
-用户问题：
-{query}
-
-检索到的论文上下文：
-{context_text}
-
-请基于以上上下文回答用户问题。
-""".strip()
-
-    response = await client.chat.completions.create(
+    response = await call_llm(
         model=chat_model,
+        system=system_prompt,
         messages=[
-            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
         temperature=0.2,
         max_tokens=1800,
     )
 
-    answer = response.choices[0].message.content
+    answer = response.get("content", "")
 
     if not answer:
         return "模型没有返回有效回答。"

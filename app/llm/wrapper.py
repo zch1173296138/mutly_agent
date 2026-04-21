@@ -10,7 +10,8 @@ async def call_llm(
     tool_choice: Optional[str] = None,
     temperature: float = 0,
     model: Optional[str] = None,
-    role: Optional[str] = None, 
+    role: Optional[str] = None,
+    max_tokens: int = 1800,
 ) -> Dict[str, Any]:
     client = get_llm_for_role(role) if role else get_llm()
 
@@ -25,6 +26,7 @@ async def call_llm(
             tool_choice=tool_choice or ("auto" if tools else None),
             temperature=temperature,
             model=model,
+            max_tokens = max_tokens,
         )
 
         choices = response.get("choices", [])
@@ -47,6 +49,7 @@ async def call_llm_stream(
     model: Optional[str] = None,
     role: Optional[str] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
+    max_tokens: int = 1800,
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """流式调用 LLM"""
     client = get_llm_for_role(role) if role else get_llm()
@@ -62,6 +65,7 @@ async def call_llm_stream(
             tool_choice="auto" if tools else None,
             temperature=temperature,
             model=model,
+            max_tokens=max_tokens,
         ):
             yield chunk
     except Exception as e:
