@@ -217,14 +217,17 @@ async def embed_candidate_texts(candidates: List[Dict[str, Any]]) -> List[List[f
 
 
 def mmr_select(
+    query_embedding: List[float],
     candidates: List[Dict[str, Any]],
     candidate_embeddings: List[List[float]],
-    relevance_scores: List[float],
     top_k: int,
     lambda_mult: float = 0.65,
 ) -> List[Dict[str, Any]]:
     """
     MMR 最终选择。
+
+    MMR = lambda * relevance(query, candidate)
+          - (1 - lambda) * max_similarity(candidate, selected)
 
     lambda_mult:
       越大越重视相关性；
@@ -239,7 +242,23 @@ def mmr_select(
         return []
 
     if len(candidates) <= top_k:
-        return candidates
+        selected = []
+
+        for rank, item in enumerate(candidates, start=1):
+            new_item = dict(item)
+            new_item["mmr_rank"] = rank
+            new_item["mmr_score"] = None
+            selected.append(new_item)
+
+        return selected
+
+    if len(candidates) != len(candidate_embeddings):
+        return candidates[:top_k]
+
+    relevance_scores = [
+        _cosine_similarity(query_embedding, emb)
+        for emb in candidate_embeddings
+    ]
 
     relevance_scores = _min_max_normalize(relevance_scores)
 
@@ -264,10 +283,16 @@ def mmr_select(
                     for selected_idx in selected_indices
                 )
 
+                # cosine similarity 范围可能是 [-1, 1]，这里转成 [0, 1]
+                diversity_penalty = (diversity_penalty + 1.0) / 2.0
+
             mmr_score = (
                 lambda_mult * relevance
                 - (1.0 - lambda_mult) * diversity_penalty
             )
+
+            # 可选：如果前面用了 RRF，可以加入一点稳定项
+            mmr_score += 0.1 * float(candidates[idx].get("rrf_score", 0.0))
 
             if mmr_score > best_score:
                 best_score = mmr_score
@@ -284,7 +309,7 @@ def mmr_select(
     for rank, idx in enumerate(selected_indices, start=1):
         item = dict(candidates[idx])
         item["mmr_rank"] = rank
-        item["mmr_relevance_score"] = float(relevance_scores[idx])
+        item["mmr_score"] = float(relevance_scores[idx])
         selected.append(item)
 
     return selected
@@ -487,9 +512,27 @@ async def retrieve_paper_context(
     candidates = candidates[:fused_fetch_k]
 
     if use_mmr:
+        candidate_embeddings = []
+
+        has_missing_embedding = False
+
+        for item in candidates:
+            embedding = item.get("embedding")
+
+            if embedding is None:
+                has_missing_embedding = True
+                break
+
+            candidate_embeddings.append(list(embedding))
+
+        # 如果 Chroma 没有返回 embedding，就重新对候选文本做 embedding
+        if has_missing_embedding:
+            candidate_embeddings = await embed_candidate_texts(candidates)
+
         final_results = mmr_select(
             query_embedding=main_query_embedding,
             candidates=candidates,
+            candidate_embeddings=candidate_embeddings,
             top_k=top_k,
             lambda_mult=0.65,
         )
@@ -669,7 +712,7 @@ async def ask_paper_agent_core(
             "rrf_score": item.get("rrf_score", None),
             "rrf_hits": item.get("rrf_hits", None),
             "mmr_rank": item.get("mmr_rank", None),
-            "mmr_relevance": item.get("mmr_relevance", None),
+            "mmr_score": item.get("mmr_score", None),
             "matched_query": item.get("matched_query", ""),
             "section_title": item.get("section_title", ""),
             "image_paths": item.get("image_paths", []),
