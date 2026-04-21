@@ -25,13 +25,9 @@ mcp = FastMCP("Local RAG Tool")
 logger.info("初始化 Local RAG MCP Server...")
 @mcp.tool()
 async def run_ingestion_pipeline(pdf_path: str)-> dict[str, str | int | Any]:
-    vlm_client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None
-    )
 
     extracted = await step1_extract_layout(pdf_path)
-    captions = await step2_generate_image_captions(extracted["images"], vlm_client)
+    captions = await step2_generate_image_captions(extracted["images"])
     merged_text = await step3_merge_context(extracted, captions)
 
     step4_result = await step4_chunk_and_embed(merged_text, extracted["images"])

@@ -249,8 +249,8 @@ async def answer_with_retrieved_context(
 
     answer = response.get("content", "")
 
-    if not answer:
-        return "模型没有返回有效回答。"
+    if response.get("error"):
+        raise ValueError(response["error"])
 
     return answer.strip()
 

@@ -11,7 +11,7 @@ async def call_llm(
     temperature: float = 0,
     model: Optional[str] = None,
     role: Optional[str] = None,
-    max_tokens: int = 1800,
+    max_tokens: int = None,
 ) -> Dict[str, Any]:
     client = get_llm_for_role(role) if role else get_llm()
 
@@ -49,7 +49,7 @@ async def call_llm_stream(
     model: Optional[str] = None,
     role: Optional[str] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
-    max_tokens: int = 1800,
+    max_tokens: int = None,
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """流式调用 LLM"""
     client = get_llm_for_role(role) if role else get_llm()

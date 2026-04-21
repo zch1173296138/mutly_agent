@@ -18,12 +18,8 @@ async def test_step2_generate_image_captions():
         }
     ]
 
-    client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None,
-    )
 
-    captions = await step2_generate_image_captions(images, client)
+    captions = await step2_generate_image_captions(images)
     assert image_path in captions
     assert len(captions[image_path]) > 20
 
