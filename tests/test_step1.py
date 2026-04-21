@@ -1,6 +1,5 @@
 import pytest
-import os
-from app.infrastructure.image_to_text_ingestion import step1_extract_layout
+from app.rag.embedding_tool import step1_extract_layout
 
 # 直接在这里设置你要测试的真实 PDF 路径
 PDF_PATH = r"C:\Users\123\Downloads\Optimizing.pdf"

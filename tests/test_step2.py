@@ -2,8 +2,7 @@ import os
 import pytest
 from openai import AsyncOpenAI
 
-from app.infrastructure.image_to_text_ingestion import step2_generate_image_captions, step3_merge_context, \
-    step4_chunk_and_embed
+from app.rag.embedding_tool import step2_generate_image_captions
 
 
 @pytest.mark.asyncio

@@ -9,20 +9,19 @@ import time
 import re
 import shutil
 import hashlib
+import chromadb
 import subprocess
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from openai import AsyncOpenAI
 from pathlib import Path
 from urllib.parse import urlparse
-from mcp.server.fastmcp import FastMCP
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
-
+from app.llm.prompt_manager import render
 from dotenv import load_dotenv
 load_dotenv()
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-mcp = FastMCP("Local RAG Tool")
 MINERU_API_KEY = os.getenv("MINERU_API_KEY", "").strip()
 
 def _image_file_to_data_url(image_path: str) -> str:
@@ -51,60 +50,95 @@ def _image_file_to_data_url(image_path: str) -> str:
 
     return f"data:{mime_type};base64,{encoded}"
 
-
-def _build_vlm_prompt(img: Dict) -> str:
+def _get_chroma_collection(collection_name: str = "paper_chunks"):
     """
-    为论文图像生成更稳定的 caption prompt。
+    获取 Chroma collection。
+    数据会持久化到 storage/chroma。
     """
-    img_id = img.get("id", "")
-    relative_path = img.get("relative_path", "")
+    project_root = Path(__file__).resolve().parents[2]
+    chroma_dir = project_root / "storage" / "chroma"
+    chroma_dir.mkdir(parents=True, exist_ok=True)
 
-    return f"""
-你是一个专业的学术论文图表理解助手，擅长计算机图形学、计算几何、CAD/B-rep、深度学习模型结构和实验图表分析。
+    client = chromadb.PersistentClient(path=str(chroma_dir))
 
-请你根据输入图片生成一段高质量中文图表描述，用于论文 RAG 检索增强。
+    collection = client.get_or_create_collection(
+        name=collection_name,
+        metadata={"hnsw:space": "cosine"},
+    )
 
-图片信息：
-- image_id: {img_id}
-- relative_path: {relative_path}
+    return collection, chroma_dir
 
-请严格遵守以下要求：
+def _upsert_chunks_to_chroma(
+    chunk_records: List[Dict],
+    collection_name: str = "paper_chunks",
+) -> Dict:
+    """
+    将 Step4 生成的 chunk_records 直接写入 Chroma。
+    不再生成 chunks_xxx.jsonl 文件。
+    """
+    collection, chroma_dir = _get_chroma_collection(collection_name)
 
-1. 不要泛泛描述“这是一张图片”，要尽量描述图中真实可见的信息。
-2. 如果是模型架构图：
-   - 说明输入、输出、模块名称、数据流向；
-   - 描述 Transformer、CNN、MLP、attention、encoder、decoder、feature extractor 等模块关系；
-   - 保留图中的英文模块名。
-3. 如果是 CAD、B-rep、mesh 或几何结构图：
-   - 描述点、边、面、环、拓扑连接关系；
-   - 描述颜色、高亮区域、特征面、边界、角点、patch、face adjacency 等信息；
-   - 如果图中有多个子图，请按从左到右、从上到下描述。
-4. 如果是表格截图：
-   - 总结表格主题；
-   - 尽量提取行列含义、指标名称、对比对象和主要结论。
-5. 如果是实验结果图：
-   - 描述横纵轴、曲线/柱状图含义、趋势和对比结论。
-6. 如果图片信息不足，请明确说明“图中可见信息有限”，不要编造不存在的模块或数值。
-7. 输出格式固定为：
+    valid_records = [
+        record for record in chunk_records
+        if record.get("embedding") is not None
+    ]
 
-【图像类型】
-一句话判断图片类型。
+    if not valid_records:
+        return {
+            "status": "empty",
+            "collection_name": collection_name,
+            "persist_dir": str(chroma_dir),
+            "upsert_count": 0,
+        }
 
-【详细描述】
-详细描述图中内容。
+    ids = []
+    documents = []
+    embeddings = []
+    metadatas = []
 
-【可用于检索的关键词】
-列出 8-15 个关键词。关键词必须具体，优先包含：
-- 图中可见的几何对象，例如 circular hole, perforated plate, rounded boundary；
-- 网格类型，例如 quad mesh, structured quadrilateral mesh, triangular mesh；
-- 拓扑模式，例如 O-grid topology, boundary-conforming mesh；
-- 算法相关术语，例如 mapped mesh, parameterization-based meshing。
+    for record in valid_records:
+        chunk_id = record.get("chunk_id")
 
-避免使用过宽泛的关键词，例如 CAD、计算几何、深度学习、有限元，除非图中有明确对应内容。
-不要把网格弯曲自动判断为局部加密；只有单元尺寸明显变小，才可以说 adaptive refinement 或 local refinement。
-""".strip()
+        if not chunk_id:
+            continue
 
+        ids.append(chunk_id)
+        documents.append(record.get("text", ""))
+        embeddings.append(record.get("embedding"))
 
+        # Chroma metadata 建议只放简单类型。
+        # list / dict 统一转成 JSON 字符串。
+        metadatas.append({
+            "chunk_id": chunk_id,
+            "chunk_index": int(record.get("chunk_index", -1)),
+            "section_index": int(record.get("section_index", -1)),
+            "local_index": int(record.get("local_index", -1)),
+            "section_title": record.get("section_title", ""),
+            "char_count": int(record.get("char_count", 0)),
+            "embedding_model": record.get("embedding_model", ""),
+            "image_paths": json.dumps(record.get("image_paths", []), ensure_ascii=False),
+            "images": json.dumps(record.get("images", []), ensure_ascii=False),
+            "headers": json.dumps(record.get("headers", {}), ensure_ascii=False),
+        })
+
+    batch_size = int(os.getenv("CHROMA_UPSERT_BATCH_SIZE", "128"))
+
+    for start in range(0, len(ids), batch_size):
+        end = start + batch_size
+
+        collection.upsert(
+            ids=ids[start:end],
+            documents=documents[start:end],
+            embeddings=embeddings[start:end],
+            metadatas=metadatas[start:end],
+        )
+
+    return {
+        "status": "ok",
+        "collection_name": collection_name,
+        "persist_dir": str(chroma_dir),
+        "upsert_count": len(ids),
+    }
 
 
 async def step1_extract_layout(pdf_path: str) -> Dict:
@@ -256,7 +290,11 @@ async def step2_generate_image_captions(
             logger.exception(f"Step 2: 图片读取失败: {img_path}")
             return img_path, f"【图像描述生成失败】图片读取失败: {e}"
 
-        prompt = _build_vlm_prompt(img)
+        prompt = render(
+            "vlm_caption",
+            img_id=img.get("id", ""),
+            relative_path = img.get("relative_path", "")
+        )
 
         async with semaphore:
             last_error: Optional[Exception] = None
@@ -531,12 +569,7 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
     chunk_overlap = int(os.getenv("CHUNK_OVERLAP", "250"))
     embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
 
-    project_root = Path(__file__).resolve().parents[2]
-    output_dir = project_root / "storage" / "chunks"
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = int(time.time())
-    jsonl_path = output_dir / f"chunks_{timestamp}.jsonl"
 
     def _stable_chunk_id(text: str, index: int) -> str:
         raw = f"{index}-{text}".encode("utf-8", errors="ignore")
@@ -782,7 +815,8 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
         logger.warning("Step 4: 没有生成任何 chunk。")
         return {
             "chunks": [],
-            "jsonl_path": "",
+            "vector_db": "chroma",
+            "chroma": {},
             "chunk_count": 0,
             "embedded_count": 0,
         }
@@ -828,10 +862,13 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
             "你可以后续重新执行 embedding。"
         )
 
-    # 4. 保存 JSONL，模拟入库
-    with jsonl_path.open("w", encoding="utf-8") as f:
-        for record in chunk_records:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    # 4. 直接写入 Chroma
+    chroma_result = _upsert_chunks_to_chroma(
+        chunk_records=chunk_records,
+        collection_name=os.getenv("CHROMA_COLLECTION", "paper_chunks"),
+    )
+
+    logger.info(f"Chroma 入库结果: {json.dumps(chroma_result, ensure_ascii=False)}")
 
     # 5. 打印预览
     for record in chunk_records[:3]:
@@ -846,37 +883,13 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
 
     logger.info(
         f"Step 4 完成: chunk_count={len(chunk_records)}, "
-        f"embedded_count={embedded_count}, jsonl_path={jsonl_path}"
+        f"embedded_count={embedded_count}"
     )
 
     return {
         "chunks": chunk_records,
-        "jsonl_path": str(jsonl_path),
+        "vector_db": "chroma",
+        "chroma": chroma_result,
         "chunk_count": len(chunk_records),
         "embedded_count": embedded_count,
     }
-
-@mcp.tool()
-async def run_ingestion_pipeline(pdf_path: str):
-    vlm_client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None
-    )
-
-    extracted = await step1_extract_layout(pdf_path)
-    captions = await step2_generate_image_captions(extracted["images"], vlm_client)
-    merged_text = await step3_merge_context(extracted, captions)
-
-    step4_result = await step4_chunk_and_embed(merged_text, extracted["images"])
-
-    logger.info(
-        f"Step 4 结果: chunks={step4_result['chunk_count']}, "
-        f"embedded={step4_result['embedded_count']}, "
-        f"jsonl={step4_result['jsonl_path']}"
-    )
-
-    logger.info("Ingestion Pipeline 执行完成！")
-
-if __name__ == "__main__":
-    logger.info("启动 Local RAG MCP Server...")
-    mcp.run()

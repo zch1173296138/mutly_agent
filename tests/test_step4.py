@@ -4,8 +4,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.infrastructure import image_to_text_ingestion
-
 
 class FakeEmbeddingClient:
     """
