@@ -41,13 +41,13 @@ async def test_step4_chunk_and_embed_basic(monkeypatch):
 
     # 1. Mock AsyncOpenAI，避免真实网络请求
     monkeypatch.setattr(
-        image_to_text_ingestion,
+        embedding_tool,
         "AsyncOpenAI",
         FakeEmbeddingClient,
     )
 
     # 2. 控制 chunk 参数，让测试结果稳定
-    monkeypatch.setenv("OPENAI_EMBEDDING_MODEL", "fake-embedding-model")
+    monkeypatch.setenv("OPENAI_VLM_MODEL", "fake-embedding-model")
     monkeypatch.setenv("CHUNK_SIZE", "200")
     monkeypatch.setenv("CHUNK_OVERLAP", "50")
     monkeypatch.setenv("EMBED_BATCH_SIZE", "2")

@@ -436,10 +436,16 @@ async def step3_merge_context(extracted_data: Dict, captions: Dict[str, str]) ->
     def _replace_first(text_value: str, pattern: str, replacement: str) -> tuple[str, bool]:
         """
         使用正则只替换第一个匹配项。
+
+        注意：
+        replacement 里可能包含 Windows 路径，例如 E:\\python\\xxx。
+        如果直接传给 re.subn，反斜杠会被当成正则替换模板解析，
+        可能触发 bad escape \\p 之类的错误。
+        所以这里用 lambda 返回原始 replacement 字符串。
         """
         new_text, count = re.subn(
             pattern,
-            replacement,
+            lambda _: replacement,
             text_value,
             count=1,
             flags=re.IGNORECASE | re.MULTILINE,
@@ -516,9 +522,9 @@ async def step3_merge_context(extracted_data: Dict, captions: Dict[str, str]) ->
             )
             unmatched_blocks.append(merge_block)
 
-    if unmatched_blocks:
-        text += "\n\n# 未匹配到原始位置的图表信息\n"
-        text += "\n".join(unmatched_blocks)
+    # if unmatched_blocks:
+    #     text += "\n\n# 未匹配到原始位置的图表信息\n"
+    #     text += "\n".join(unmatched_blocks)
 
     logger.info(
         f"Step 3 完成: images={len(images)}, unmatched={len(unmatched_blocks)}, "
@@ -646,12 +652,86 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
         )
         return text
 
+    def _protect_equation_blocks(text: str) -> str:
+        """
+        将 LaTeX 公式包装成不可切分块，避免 RecursiveCharacterTextSplitter
+        把公式中间切断。
+
+        支持：
+        1. \\begin{equation} ... \\end{equation}
+        2. \\begin{align} ... \\end{align}
+        3. $$ ... $$
+        4. \\[ ... \\]
+        5. 独立成行的 LaTeX 公式
+        """
+        if not text:
+            return text
+
+        protected_blocks = []
+
+        def _stash(match: re.Match) -> str:
+            raw = match.group(0).strip()
+            if not raw:
+                return match.group(0)
+
+            idx = len(protected_blocks)
+            protected_blocks.append(raw)
+            return f"\n\n@@EQUATION_BLOCK_{idx}@@\n\n"
+
+        patterns = [
+            (
+                r"\\begin\{(?:equation|equation\*|align|align\*|aligned|gather|gather\*|multline|multline\*)\}"
+                r".*?"
+                r"\\end\{(?:equation|equation\*|align|align\*|aligned|gather|gather\*|multline|multline\*)\}",
+                re.DOTALL,
+            ),
+            (
+                r"\$\$.*?\$\$",
+                re.DOTALL,
+            ),
+            (
+                r"\\\[.*?\\\]",
+                re.DOTALL,
+            ),
+            (
+                r"(?m)^[ \t]*"
+                r"(?=.{8,800}$)"
+                r"(?=.*(?:=|\\tag|\\frac|\\sum|\\left|\\right))"
+                r"(?=.*\\(?:tag|frac|left|right|overline|underline|alpha|beta|gamma|theta|pi|lfloor|rfloor|sum|prod|sqrt|int|bar))"
+                r"[^\n]+$",
+                0,
+            ),
+        ]
+
+        for pattern, flags in patterns:
+            text = re.sub(pattern, _stash, text, flags=flags)
+
+        for idx, raw in enumerate(protected_blocks):
+            block = f"""
+    ---
+    【公式信息开始】
+    LaTeX:
+    {raw}
+    【公式信息结束】
+    ---
+    """.strip()
+
+            text = text.replace(f"@@EQUATION_BLOCK_{idx}@@", block)
+
+        logger.info(f"Step 4: 检测并保护公式块数量={len(protected_blocks)}")
+
+        return text
+
     def _split_preserve_image_blocks(text: str) -> List[str]:
         """
         将文本切成普通文本块 + 图表信息块。
         图表信息块作为不可切分原子单元保留。
         """
-        pattern = r"【图表信息补充开始】.*?【图表信息补充结束】"
+        pattern = (
+            r"【图表信息补充开始】.*?【图表信息补充结束】"
+            r"|"
+            r"【公式信息开始】.*?【公式信息结束】"
+        )
         parts = []
         last_end = 0
 
@@ -694,22 +774,32 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
 
     def _pack_units_to_chunks(units: List[str]) -> List[str]:
         """
-        将普通文本单元和图表原子块组合成 chunk。
-        图表块不被切断。
-        如果单个图表块超过 chunk_size，则允许该 chunk 超长。
+        将普通文本单元和特殊原子块组合成 chunk。
+
+        公式块 / 图表块不会被切断。
+        如果单个特殊块超过 chunk_size，则允许该 chunk 超长。
         """
         chunks = []
         current = ""
+
+        def _is_special_block(unit: str) -> bool:
+            return (
+                    (
+                            "【图表信息补充开始】" in unit
+                            and "【图表信息补充结束】" in unit
+                    )
+                    or (
+                            "【公式信息开始】" in unit
+                            and "【公式信息结束】" in unit
+                    )
+            )
 
         for unit in units:
             unit = unit.strip()
             if not unit:
                 continue
 
-            is_image_block = (
-                    "【图表信息补充开始】" in unit
-                    and "【图表信息补充结束】" in unit
-            )
+            is_special_block = _is_special_block(unit)
 
             if not current:
                 current = unit
@@ -720,16 +810,18 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
             if len(candidate) <= chunk_size:
                 current = candidate
             else:
-                chunks.append(current)
+                chunks.append(current.strip())
 
-                # 图表块即使超过 chunk_size，也单独保留，不切断
+                # 特殊块即使超过 chunk_size，也单独保留，不切断
                 current = unit
 
         if current.strip():
             chunks.append(current.strip())
 
         return chunks
-    protected_text = _protect_image_blocks(merged_text)
+
+    protected_text = _protect_equation_blocks(merged_text)
+    protected_text = _protect_image_blocks(protected_text)
 
     # 1. 先按 Markdown 标题切分，保留章节信息
     headers_to_split_on = [
@@ -836,7 +928,7 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
         )
         return [item.embedding for item in response.data]
 
-    batch_size = int(os.getenv("EMBED_BATCH_SIZE", "32"))
+    batch_size = int(os.getenv("EMBED_BATCH_SIZE", "8"))
     embedded_count = 0
 
     try:

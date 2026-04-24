@@ -28,6 +28,7 @@ dependencies = [
     "langsmith>=0.7.10",
     "aiohttp>=3.13.3",
     "tavily-python>=0.7.23",
+    "rank-bm25>=0.2.2",
 ]
 
 [dependency-groups]

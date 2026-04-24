@@ -168,7 +168,7 @@ Fig. 6. Structured quadrilateral mesh for templates during Submapping: (a3)struc
 (d1)
 
 ![](images/250573034e679e133eb548dcf4d270389d84dfc559369ad8e71209eaa2aca7a9.jpg)  
-  
+
 Fig. 7. Templates for concentric rings: (a1)one quarter of concentric ring; (a2)structured mesh for (a1); (b1)one half of concentric ring; (b2)structured mesh for (a2); (c1)three quarters of concentric ring; (c2)structured mesh for (c1); (d1)a full concentric ring; (d2)structured mesh for d(1)
 
 virtual vertices $B$ and $C$ can be inserted at the one-quarter and three-quarter position between $A$ and $D$ , respectively. For the three-quarter circle feature in Fig. 5(c1), the virtual vertices $B$ , $C$ and $D$ are placed at the one-sixth, one-half, five-sixth position between A and $E$ , respectively. The virtual vertices $B , C , D$ and $E$ in Fig. 5(d1) are distributed with equal spacings on a full circle.
@@ -357,7 +357,7 @@ The first example in Fig. 10 shows a surface with a three-quarters round feature
 Fig. 12. Structured grid generation of a surface with a half concentric ring and a half circle feature by submapping through templates: (a)corner assignment by Cubit 13.2; (b)structured grid for (a); (c)corner assignment based on templates in this paper; (d)structured grid for (c)
 
 ![](images/f28eca4f0da05bdd90f5086e68b6ea488f467ada4c19fd16ec15c5cd8a8b5671.jpg)  
-  
+
 Fig. 13. Mesh quality histogram: (a)mesh quality histogram for Fig. 12(b); (b)mesh quality histogram for Fig. 12(d)
 
 paper, two new vertices are virtually inserted and surface vertices are classified as Fig. 10(c). The corresponding structured quadrilateral mesh is shown in Fig. 10(d) with good mesh quality, which is illustrated in Fig. 11(b).

@@ -2,7 +2,7 @@ import pytest
 from app.rag.embedding_tool import step1_extract_layout
 
 # 直接在这里设置你要测试的真实 PDF 路径
-PDF_PATH = r"C:\Users\123\Downloads\Optimizing.pdf"
+PDF_PATH = r"C:\Users\123\Downloads\1-s2.0-S0965997809001410-main.pdf"
 
 @pytest.mark.asyncio
 async def test_step1_real_pdf_parsing():
