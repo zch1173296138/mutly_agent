@@ -1,0 +1,11 @@
+{
+  "vector_db": "chroma",
+  "chunk_count": 88,
+  "embedded_count": 88,
+  "chroma": {
+    "status": "ok",
+    "collection_name": "paper_chunks",
+    "persist_dir": "E:\\python\\research-copilot-main\\storage\\chroma",
+    "upsert_count": 88
+  }
+}
