@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent Evaluation Case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "category",
+    "difficulty",
+    "user_query",
+    "available_sources",
+    "gold_answer",
+    "gold_behavior",
+    "evidence",
+    "expected_nodes",
+    "expected_tools",
+    "max_steps",
+    "loop_rules",
+    "scoring"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z]+_[0-9]{3}$"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "controller_routing",
+        "planner_decomposition",
+        "rag_retrieval",
+        "pdf_parsing",
+        "financial_report_qa",
+        "end_to_end_report",
+        "tool_failure",
+        "hitl_safety",
+        "loop_stability"
+      ]
+    },
+    "difficulty": {
+      "type": "string",
+      "enum": ["easy", "medium", "hard"]
+    },
+    "user_query": {
+      "type": "string",
+      "minLength": 1
+    },
+    "available_sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["id", "type", "path", "note"],
+          "additionalProperties": false,
+          "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": ["local_doc", "pdf", "web_snapshot", "financial_report", "none"]
+          },
+          "path": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "gold_behavior": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gold_answer": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source_id", "quote"],
+        "additionalProperties": false,
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locator": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "expected_nodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["controller", "planner", "worker", "reviewer", "simple_chat", "resumer"]
+      },
+      "minItems": 1
+    },
+    "expected_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_steps": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "loop_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_total_steps",
+        "max_same_tool_calls",
+        "max_no_state_change_steps"
+      ],
+      "properties": {
+        "max_total_steps": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_same_tool_calls": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_no_state_change_steps": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "ab_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["experiment", "primary_metric", "hypothesis_only", "variants"],
+      "properties": {
+        "experiment": {
+          "type": "string",
+          "enum": ["langgraph_vs_react_loop"]
+        },
+        "primary_metric": {
+          "type": "string",
+          "enum": ["loop_rate"]
+        },
+        "hypothesis_only": {
+          "type": "boolean",
+          "const": true
+        },
+        "variants": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["langgraph_state_machine", "linear_react_baseline"],
+          "properties": {
+            "langgraph_state_machine": {
+              "$ref": "#/$defs/ab_variant_hypothesis"
+            },
+            "langgraph_react_worker": {
+              "$ref": "#/$defs/ab_variant_hypothesis"
+            },
+            "linear_react_baseline": {
+              "$ref": "#/$defs/ab_variant_hypothesis"
+            }
+          }
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_success",
+        "evidence_correctness",
+        "tool_use_correctness",
+        "no_loop",
+        "final_report_quality"
+      ],
+      "properties": {
+        "task_success": {
+          "type": "number",
+          "minimum": 0
+        },
+        "evidence_correctness": {
+          "type": "number",
+          "minimum": 0
+        },
+        "tool_use_correctness": {
+          "type": "number",
+          "minimum": 0
+        },
+        "no_loop": {
+          "type": "number",
+          "minimum": 0
+        },
+        "final_report_quality": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "calculation": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "ab_variant_hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hypothesis_pass",
+        "hypothesis_loop",
+        "hypothesis_stop_reason",
+        "hypothesis_notes"
+      ],
+      "properties": {
+        "hypothesis_pass": {
+          "type": "boolean"
+        },
+        "hypothesis_loop": {
+          "type": "boolean"
+        },
+        "hypothesis_stop_reason": {
+          "type": "string",
+          "enum": [
+            "completed",
+            "controlled_stop",
+            "loop_detected",
+            "max_steps_exceeded",
+            "tool_failure",
+            "human_input_required",
+            "runtime_error"
+          ]
+        },
+        "hypothesis_notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

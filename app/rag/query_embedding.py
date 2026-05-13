@@ -6,12 +6,16 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from rank_bm25 import BM25Okapi
-import chromadb
-from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 from app.llm import call_llm
 from app.llm.prompt_manager import render
+from app.rag.common import (
+    embed_texts,
+    get_chroma_collection,
+    safe_json_loads,
+    safe_preview,
+)
 
 load_dotenv()
 
@@ -915,15 +919,7 @@ def _get_chroma_collection(collection_name: str = "paper_chunks"):
     获取 Chroma collection。
     需要和 step4 写入时使用同一个 storage/chroma 路径。
     """
-    chroma_dir = _project_root() / "storage" / "chroma"
-
-    client = chromadb.PersistentClient(path=str(chroma_dir))
-
-    collection = client.get_or_create_collection(
-        name=collection_name,
-        metadata={"hnsw:space": "cosine"},
-    )
-
+    collection, _ = get_chroma_collection(collection_name)
     return collection
 
 
@@ -932,29 +928,11 @@ def _safe_json_loads(value: Any, default: Any):
     Chroma metadata 中 image_paths/images/headers 是 JSON 字符串。
     这里做安全反序列化。
     """
-    if value is None:
-        return default
-
-    if isinstance(value, (list, dict)):
-        return value
-
-    if not isinstance(value, str):
-        return default
-
-    try:
-        return json.loads(value)
-    except Exception:
-        return default
+    return safe_json_loads(value, default)
 
 
 def _safe_preview(text: str, max_chars: int = 500) -> str:
-    text = text or ""
-    text = text.replace("\n", " ").strip()
-
-    if len(text) <= max_chars:
-        return text
-
-    return text[:max_chars] + "..."
+    return safe_preview(text, max_chars=max_chars)
 
 
 async def embed_queries(queries: List[str]) -> List[List[float]]:
@@ -965,38 +943,7 @@ async def embed_queries(queries: List[str]) -> List[List[float]]:
     DashScope compatible embedding endpoint 限制 input batch size <= 10。
     所以这里必须分批调用，不能一次性传入所有 queries。
     """
-    if not queries:
-        return []
-
-    embedding_model = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-3-small")
-
-    client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None,
-    )
-
-    batch_size = int(os.getenv("EMBED_BATCH_SIZE", "8"))
-    batch_size = max(1, min(batch_size, 10))
-
-    all_embeddings: List[List[float]] = []
-
-    for start in range(0, len(queries), batch_size):
-        end = start + batch_size
-        batch = queries[start:end]
-
-        logger.info(
-            f"Embedding batch: range=[{start}, {end}), "
-            f"batch_size={len(batch)}, model={embedding_model}"
-        )
-
-        response = await client.embeddings.create(
-            model=embedding_model,
-            input=batch,
-        )
-
-        all_embeddings.extend([item.embedding for item in response.data])
-
-    return all_embeddings
+    return await embed_texts(queries)
 
 
 async def embed_query(query: str) -> List[float]:

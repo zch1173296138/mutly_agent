@@ -378,7 +378,7 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
             # 收集结果并构建消息
             for tr in tool_results:
                 # 存储到 tool_history 时截断为 400 字符（用于日志/状态）
-                output = await compress_tool_output(tr["output"], task["description"])
+                output = await compress_tool_output(tr["output"], task.description)
                 collected_tool_calls.append(ToolCall(
                     task_id=task_id,
                     tool_name=tr["tool_name"],

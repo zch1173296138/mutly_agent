@@ -1,8 +1,9 @@
-import json
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
+import app.rag.common as rag_common
+import app.rag.embedding_tool as embedding_tool
 
 
 class FakeEmbeddingClient:
@@ -41,9 +42,21 @@ async def test_step4_chunk_and_embed_basic(monkeypatch):
 
     # 1. Mock AsyncOpenAI，避免真实网络请求
     monkeypatch.setattr(
-        embedding_tool,
+        rag_common,
         "AsyncOpenAI",
         FakeEmbeddingClient,
+    )
+    monkeypatch.setattr(
+        embedding_tool,
+        "_upsert_chunks_to_chroma",
+        lambda chunk_records, collection_name="paper_chunks": {
+            "status": "ok",
+            "collection_name": collection_name,
+            "persist_dir": "memory",
+            "upsert_count": len(
+                [x for x in chunk_records if x.get("embedding") is not None]
+            ),
+        },
     )
 
     # 2. 控制 chunk 参数，让测试结果稳定
@@ -95,7 +108,7 @@ structured quadrilateral mesh, quad mesh, circular hole, boundary-conforming mes
     ]
 
     # 4. 执行 Step 4
-    result = await image_to_text_ingestion.step4_chunk_and_embed(
+    result = await embedding_tool.step4_chunk_and_embed(
         merged_text=merged_text,
         processed_images=processed_images,
     )
@@ -103,7 +116,6 @@ structured quadrilateral mesh, quad mesh, circular hole, boundary-conforming mes
     # 5. 基础结构断言
     assert isinstance(result, dict)
     assert "chunks" in result
-    assert "jsonl_path" in result
     assert "chunk_count" in result
     assert "embedded_count" in result
 
@@ -149,18 +161,6 @@ structured quadrilateral mesh, quad mesh, circular hole, boundary-conforming mes
     assert "boundary-conforming quad mesh" in image_chunk["text"]
     assert "【图表信息补充开始】" in image_chunk["text"]
 
-    # 9. 检查 JSONL 文件存在且内容可读
-    jsonl_path = Path(result["jsonl_path"])
-
-    assert jsonl_path.exists()
-    assert jsonl_path.is_file()
-
-    lines = jsonl_path.read_text(encoding="utf-8").strip().splitlines()
-
-    assert len(lines) == result["chunk_count"]
-
-    loaded_first = json.loads(lines[0])
-
-    assert "chunk_id" in loaded_first
-    assert "text" in loaded_first
-    assert "embedding" in loaded_first
+    # 9. 检查 Chroma 写入路径被调用
+    assert result["chroma"]["status"] == "ok"
+    assert result["chroma"]["upsert_count"] == result["chunk_count"]

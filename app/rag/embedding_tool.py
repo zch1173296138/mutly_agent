@@ -5,19 +5,17 @@ import base64
 import mimetypes
 import random
 import asyncio
-import time
 import re
 import shutil
 import hashlib
-import chromadb
 import subprocess
 from typing import List, Dict, Optional, Any
-from openai import AsyncOpenAI
 from pathlib import Path
 from urllib.parse import urlparse
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from app.llm.prompt_manager import render
 from app.llm.wrapper import call_llm
+from app.rag.common import embed_texts, get_chroma_collection, project_root
 from dotenv import load_dotenv
 load_dotenv()
 # 配置日志
@@ -56,18 +54,7 @@ def _get_chroma_collection(collection_name: str = "paper_chunks"):
     获取 Chroma collection。
     数据会持久化到 storage/chroma。
     """
-    project_root = Path(__file__).resolve().parents[2]
-    chroma_dir = project_root / "storage" / "chroma"
-    chroma_dir.mkdir(parents=True, exist_ok=True)
-
-    client = chromadb.PersistentClient(path=str(chroma_dir))
-
-    collection = client.get_or_create_collection(
-        name=collection_name,
-        metadata={"hnsw:space": "cosine"},
-    )
-
-    return collection, chroma_dir
+    return get_chroma_collection(collection_name)
 
 def _upsert_chunks_to_chroma(
     chunk_records: List[Dict],
@@ -170,8 +157,8 @@ async def step1_extract_layout(pdf_path: str) -> Dict:
     def _sync_extract() -> Dict:
         paper_id = _paper_id(pdf_path)
 
-        project_root = Path(__file__).resolve().parents[2]
-        output_dir = project_root / "storage" / "parsed" / paper_id
+        root = project_root()
+        output_dir = root / "storage" / "parsed" / paper_id
 
         if output_dir.exists():
             shutil.rmtree(output_dir)
@@ -191,7 +178,7 @@ async def step1_extract_layout(pdf_path: str) -> Dict:
 
         proc = subprocess.run(
             cmd,
-            cwd=str(project_root),
+            cwd=str(root),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -916,19 +903,8 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
     logger.info(f"Step 4: 切片完成，共生成 {len(chunk_records)} 个 chunk。")
 
     # 3. 调用 embedding API
-    embed_client = AsyncOpenAI(
-        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
-        base_url=os.getenv("OPENAI_BASE_URL") or None,
-    )
-
-    async def _embed_batch(texts: List[str]) -> List[List[float]]:
-        response = await embed_client.embeddings.create(
-            model=embedding_model,
-            input=texts,
-        )
-        return [item.embedding for item in response.data]
-
     batch_size = int(os.getenv("EMBED_BATCH_SIZE", "8"))
+    batch_size = max(1, min(batch_size, 10))
     embedded_count = 0
 
     try:
@@ -942,7 +918,7 @@ async def step4_chunk_and_embed(merged_text: str, processed_images: List[Dict]) 
                 f"range=[{start}, {min(end, len(chunk_records))})"
             )
 
-            embeddings = await _embed_batch(batch_texts)
+            embeddings = await embed_texts(batch_texts)
 
             for record, embedding in zip(batch, embeddings):
                 record["embedding"] = embedding

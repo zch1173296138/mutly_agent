@@ -4,6 +4,10 @@
       "type": "python",
       "script_or_package": "app/infrastructure/local_server.py"
     },
+    "local-rag": {
+      "type": "python",
+      "script_or_package": "app/infrastructure/rag_server.py"
+    },
     "amap-maps": {
       "type": "node",
       "package": "@amap/amap-maps-mcp-server",

@@ -282,7 +282,7 @@ export function useChatStream() {
                     description: event.description,
                   });
                 } else if (event.type === "content_token" || event.type === "thinking_token") {
-                  flushSync(() => applyEvent(event));
+                  applyEvent(event);
                 } else {
                   applyEvent(event);
                 }
