@@ -1,0 +1,253 @@
+{
+  "source": "live_integration",
+  "evidentiary": true,
+  "notes": "",
+  "variants": {
+    "langgraph_state_machine": {
+      "overall": {
+        "case_count": 1,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "failed": 1,
+        "failure_rate": 1.0,
+        "error_count": 1,
+        "error_rate": 1.0,
+        "timeout_count": 1,
+        "timeout_rate": 1.0,
+        "loop_count": 0,
+        "loop_rate": 0.0,
+        "max_step_abort_rate": 0.0,
+        "repeated_tool_call_rate": 0.0
+      },
+      "failed_ids": [
+        "loop_001"
+      ],
+      "loop_ids": [],
+      "stop_reasons": {
+        "timeout": 1
+      }
+    },
+    "langgraph_react_worker": {
+      "overall": {
+        "case_count": 1,
+        "passed": 0,
+        "pass_rate": 0.0,
+        "failed": 1,
+        "failure_rate": 1.0,
+        "error_count": 1,
+        "error_rate": 1.0,
+        "timeout_count": 1,
+        "timeout_rate": 1.0,
+        "loop_count": 0,
+        "loop_rate": 0.0,
+        "max_step_abort_rate": 0.0,
+        "repeated_tool_call_rate": 0.0
+      },
+      "failed_ids": [
+        "loop_001"
+      ],
+      "loop_ids": [],
+      "stop_reasons": {
+        "timeout": 1
+      }
+    },
+    "linear_react_baseline": {
+      "overall": {
+        "case_count": 1,
+        "passed": 1,
+        "pass_rate": 1.0,
+        "failed": 0,
+        "failure_rate": 0.0,
+        "error_count": 0,
+        "error_rate": 0.0,
+        "timeout_count": 0,
+        "timeout_rate": 0.0,
+        "loop_count": 0,
+        "loop_rate": 0.0,
+        "max_step_abort_rate": 0.0,
+        "repeated_tool_call_rate": 0.0
+      },
+      "failed_ids": [],
+      "loop_ids": [],
+      "stop_reasons": {
+        "completed": 1
+      }
+    }
+  },
+  "delta": {
+    "pass_rate": -1.0,
+    "loop_rate": 0.0
+  },
+  "pairwise_deltas": {
+    "langgraph_state_machine__vs__linear_react_baseline": {
+      "pass_rate": -1.0,
+      "loop_rate": 0.0
+    },
+    "langgraph_state_machine__vs__langgraph_react_worker": {
+      "pass_rate": 0.0,
+      "loop_rate": 0.0
+    },
+    "langgraph_react_worker__vs__linear_react_baseline": {
+      "pass_rate": -1.0,
+      "loop_rate": 0.0
+    }
+  },
+  "cases": [
+    {
+      "case_id": "loop_001",
+      "variant": "langgraph_state_machine",
+      "executed": true,
+      "score": {
+        "case_id": "loop_001",
+        "variant": "langgraph_state_machine",
+        "passed": false,
+        "loop_triggered": false,
+        "max_step_aborted": false,
+        "repeated_tool_call_rate": 0.0,
+        "total_steps": 1,
+        "max_same_tool_calls": 0,
+        "max_no_state_change_steps": 1,
+        "stop_reason": "timeout",
+        "triggered_by_steps": false,
+        "triggered_by_tool": false,
+        "triggered_by_state": false,
+        "task_success": false
+      },
+      "trace": [
+        {
+          "variant": "langgraph_state_machine",
+          "step": 1,
+          "action": "variant_timeout",
+          "state_before": "timeout",
+          "state_after": "timeout",
+          "state_diff": {},
+          "tool_name": null,
+          "tool_arguments": null,
+          "tool_argument_hash": null,
+          "tool_output_summary": null,
+          "tool_output_hash": null,
+          "error": "variant exceeded 60.0 seconds",
+          "stop_reason": "timeout",
+          "elapsed_ms": 60062.0
+        }
+      ],
+      "stop_reason": "timeout",
+      "error": "variant exceeded 60.0 seconds"
+    },
+    {
+      "case_id": "loop_001",
+      "variant": "linear_react_baseline",
+      "executed": true,
+      "score": {
+        "case_id": "loop_001",
+        "variant": "linear_react_baseline",
+        "passed": true,
+        "loop_triggered": false,
+        "max_step_aborted": false,
+        "repeated_tool_call_rate": 0.0,
+        "total_steps": 2,
+        "max_same_tool_calls": 1,
+        "max_no_state_change_steps": 0,
+        "stop_reason": "completed",
+        "triggered_by_steps": false,
+        "triggered_by_tool": false,
+        "triggered_by_state": false,
+        "task_success": true
+      },
+      "trace": [
+        {
+          "variant": "linear_react_baseline",
+          "step": 1,
+          "action": "react_tool",
+          "state_before": "e71f25ce6142bba4",
+          "state_after": "0b5410bf04d3f9e4",
+          "state_diff": {
+            "added": [],
+            "removed": [],
+            "changed": [
+              "messages",
+              "observations"
+            ]
+          },
+          "tool_name": "tavily_search",
+          "tool_arguments": {
+            "query": "Apple 2026 annual report R&D expenses research and development",
+            "count": 5,
+            "search_depth": "advanced"
+          },
+          "tool_argument_hash": "137353878e9ae79b",
+          "tool_output_summary": null,
+          "tool_output_hash": "12ae32cb1ec02d01",
+          "error": null,
+          "stop_reason": null,
+          "elapsed_ms": null
+        },
+        {
+          "variant": "linear_react_baseline",
+          "step": 2,
+          "action": "react_final",
+          "state_before": "0b5410bf04d3f9e4",
+          "state_after": "293297c5d6ae495e",
+          "state_diff": {
+            "added": [],
+            "removed": [],
+            "changed": [
+              "final_output"
+            ]
+          },
+          "tool_name": null,
+          "tool_arguments": null,
+          "tool_argument_hash": null,
+          "tool_output_summary": null,
+          "tool_output_hash": null,
+          "error": null,
+          "stop_reason": "completed",
+          "elapsed_ms": null
+        }
+      ],
+      "stop_reason": "completed",
+      "error": null
+    },
+    {
+      "case_id": "loop_001",
+      "variant": "langgraph_react_worker",
+      "executed": true,
+      "score": {
+        "case_id": "loop_001",
+        "variant": "langgraph_react_worker",
+        "passed": false,
+        "loop_triggered": false,
+        "max_step_aborted": false,
+        "repeated_tool_call_rate": 0.0,
+        "total_steps": 1,
+        "max_same_tool_calls": 0,
+        "max_no_state_change_steps": 1,
+        "stop_reason": "timeout",
+        "triggered_by_steps": false,
+        "triggered_by_tool": false,
+        "triggered_by_state": false,
+        "task_success": false
+      },
+      "trace": [
+        {
+          "variant": "langgraph_react_worker",
+          "step": 1,
+          "action": "variant_timeout",
+          "state_before": "timeout",
+          "state_after": "timeout",
+          "state_diff": {},
+          "tool_name": null,
+          "tool_arguments": null,
+          "tool_argument_hash": null,
+          "tool_output_summary": null,
+          "tool_output_hash": null,
+          "error": "variant exceeded 60.0 seconds",
+          "stop_reason": "timeout",
+          "elapsed_ms": 60016.0
+        }
+      ],
+      "stop_reason": "timeout",
+      "error": "variant exceeded 60.0 seconds"
+    }
+  ]
+}

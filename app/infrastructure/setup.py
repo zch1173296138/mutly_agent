@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 
+def _prepend_pythonpath(env: Dict[str, str], path: Path) -> Dict[str, str]:
+    updated = dict(env)
+    root = str(path)
+    current = updated.get("PYTHONPATH", "")
+    parts = [part for part in current.split(os.pathsep) if part]
+    if root not in parts:
+        updated["PYTHONPATH"] = os.pathsep.join([root, *parts])
+    return updated
+
+
 def _expand_env(value: Any) -> Any:
     """递归展开字符串中的 ${ENV_VAR} 占位符dict/list 递归处理。"""
     if isinstance(value, str):
@@ -113,21 +123,24 @@ class MCPRegistry:
                 return MCPToolClient.from_python(
                     script_or_package=script_or_package,
                     args=args,
-                    env=env,
+                    env=_prepend_pythonpath(env, Path(cwd)),
                     cwd=cwd,
                     uv_bin=uv_bin,
                 )
             else:
                 # 无 cwd：若是本地文件，基于项目根目录解析为绝对路径
                 script_path = Path(script_or_package)
+                default_cwd = None
                 if script_or_package.endswith(".py") and not script_path.is_absolute():
                     script_path = _PROJECT_ROOT / script_path
                     script_or_package = str(script_path.resolve())
+                    default_cwd = str(_PROJECT_ROOT)
 
                 return MCPToolClient.from_python(
                     script_or_package=script_or_package,
                     args=args,
-                    env=env,
+                    env=_prepend_pythonpath(env, _PROJECT_ROOT) if default_cwd else env,
+                    cwd=default_cwd,
                     uv_bin=uv_bin,
                 )
 

@@ -1,0 +1,60 @@
+datasets:
+  seed:
+    path: evals/datasets/seed/eval_cases.jsonl
+    description: Copied seed cases from datasets/agent_eval/eval_cases.jsonl.
+  generated_loop_eval:
+    path: evals/datasets/generated/multy_agent_loop_eval.jsonl
+    description: Seed, synthetic loop/adversarial, and open-source adapter slot cases.
+    case_count: 65
+  open_source_agent_eval:
+    path: evals/datasets/generated/open_source_agent_eval.jsonl
+    description: Reviewed small-sample imports from GAIA, AgentBench, and ToolBench.
+    generated_by: evals/scripts/import_open_source_datasets.py
+    downloader: evals/scripts/download_open_source_samples.py
+    current_case_count: 15
+  formal_loop_minimal:
+    path: evals/datasets/formal/formal_loop_minimal.jsonl
+    description: Minimal approved formal evaluation split.
+    generated_by: evals/scripts/build_dataset_splits.py
+    current_case_count: 4
+  dev_loop_eval:
+    path: evals/datasets/dev/dev_loop_eval.jsonl
+    description: Development split with seed, synthetic, and real imported open-source samples.
+    generated_by: evals/scripts/build_dataset_splits.py
+    current_case_count: 60
+  staging_open_source_agent_eval:
+    path: evals/datasets/staging/open_source_agent_eval.jsonl
+    description: Open-source samples pending license or label review.
+    generated_by: evals/scripts/build_dataset_splits.py
+    current_case_count: 15
+  open_source_slots:
+    path: evals/datasets/templates/open_source_slots.jsonl
+    description: Placeholder template slots for future open-source imports.
+    generated_by: evals/scripts/build_dataset_splits.py
+    current_case_count: 20
+
+adapters:
+  gaia:
+    module: evals.adapters.gaia_adapter
+    class: GAIAAdapter
+    dry_run_by_default: true
+  agentbench:
+    module: evals.adapters.agentbench_adapter
+    class: AgentBenchAdapter
+    dry_run_by_default: true
+  toolbench:
+    module: evals.adapters.toolbench_adapter
+    class: ToolBenchAdapter
+    dry_run_by_default: true
+  tau_bench:
+    module: evals.adapters.tau_bench_adapter
+    class: TauBenchAdapter
+    dry_run_by_default: true
+    real_import_supported: false
+
+evaluators:
+  - evals.evaluators.termination
+  - evals.evaluators.no_loop
+  - evals.evaluators.tool_repetition
+  - evals.evaluators.node_path
+  - evals.evaluators.latency

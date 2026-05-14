@@ -75,6 +75,7 @@ class MCPToolClient:
             command=self.command,
             args=self.args,
             env=self.env,
+            cwd=self.cwd,
         )
         stdio_transport = await self._exit_stack.enter_async_context(
             stdio_client(server_params)

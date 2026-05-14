@@ -33,6 +33,7 @@ STOP_MAX_STEPS = "max_steps_exceeded"
 STOP_TOOL_FAILURE = "tool_failure"
 STOP_HUMAN_INPUT = "human_input_required"
 STOP_RUNTIME_ERROR = "runtime_error"
+STOP_TIMEOUT = "timeout"
 
 REPORT_SOURCE_DETERMINISTIC = "deterministic_adapter"
 REPORT_SOURCE_LIVE = "live_integration"
@@ -45,6 +46,17 @@ TARGET_GROUPS = {
     "end_to_end": {"end_to_end_report"},
     "loop_stability": {"loop_stability"},
 }
+
+
+def is_formal_case(case: dict[str, Any]) -> bool:
+    review = case.get("label_review") or {}
+    return (
+        review.get("status") == "approved"
+        and review.get("confidence") != "low"
+        and bool(str(review.get("reviewer") or "").strip())
+        and bool(str(review.get("reviewed_at") or "").strip())
+        and bool(str(review.get("notes") or "").strip())
+    )
 
 
 def _stable_json(value: Any) -> str:
@@ -208,6 +220,12 @@ class VariantReport:
     case_count: int
     passed: int
     pass_rate: float
+    failed: int
+    failure_rate: float
+    error_count: int
+    error_rate: float
+    timeout_count: int
+    timeout_rate: float
     loop_count: int
     loop_rate: float
     max_step_abort_rate: float
@@ -233,6 +251,12 @@ class ABReport:
                     "case_count": report.case_count,
                     "passed": report.passed,
                     "pass_rate": report.pass_rate,
+                    "failed": report.failed,
+                    "failure_rate": report.failure_rate,
+                    "error_count": report.error_count,
+                    "error_rate": report.error_rate,
+                    "timeout_count": report.timeout_count,
+                    "timeout_rate": report.timeout_rate,
                     "loop_count": report.loop_count,
                     "loop_rate": report.loop_rate,
                     "max_step_abort_rate": report.max_step_abort_rate,
@@ -388,6 +412,58 @@ class DeterministicToolAdapter:
         return self.outputs[tool_name]
 
 
+class LiveModelAdapter:
+    async def chat(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        role: str,
+        tools: list[dict[str, Any]] | None = None,
+        system: str | None = None,
+    ) -> dict[str, Any]:
+        from app.llm.wrapper import call_llm
+
+        return await call_llm(
+            messages=messages,
+            system=system,
+            tools=tools,
+            role=role,
+            temperature=0,
+        )
+
+
+class LiveToolAdapter:
+    def __init__(self, registry: Any, tools: list[Any]) -> None:
+        self.registry = registry
+        self.tools = tools
+
+    @classmethod
+    async def create(cls, registry: Any | None = None) -> "LiveToolAdapter":
+        if registry is None:
+            from app.infrastructure.setup import tool_registry
+
+            registry = tool_registry
+        await registry.initialize()
+        return cls(registry=registry, tools=await registry.get_all_tools())
+
+    def openai_tools(self) -> list[dict[str, Any]]:
+        from app.llm.wrapper import mcp_tools_to_openai_tools
+
+        return mcp_tools_to_openai_tools(self.tools)
+
+    async def execute(self, tool_name: str, arguments: dict[str, Any]) -> str:
+        result = await self.registry.execute_tool(tool_name, arguments)
+        content = getattr(result, "content", result)
+        if isinstance(content, str):
+            return content
+        return _stable_json(_jsonable(content))
+
+    async def close(self) -> None:
+        cleanup = getattr(self.registry, "cleanup", None)
+        if cleanup is not None:
+            await cleanup()
+
+
 def _tool_key(event: TraceEvent) -> str | None:
     if not event.tool_name:
         return None
@@ -428,6 +504,8 @@ def _tool_calls_from_response(response: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _task_success(case: dict[str, Any], final_output: str, stop_reason: str) -> bool:
     if stop_reason == STOP_RUNTIME_ERROR:
+        return False
+    if stop_reason == STOP_TIMEOUT:
         return False
     if case["category"] == "tool_failure":
         return stop_reason == STOP_TOOL_FAILURE
@@ -1140,6 +1218,9 @@ def _variant_report(variant: str, scores: list[RunScore]) -> VariantReport:
     passed = sum(1 for score in scores if score.passed)
     loops = [score.case_id for score in scores if score.loop_triggered]
     failed = [score.case_id for score in scores if not score.passed]
+    error_stop_reasons = {STOP_RUNTIME_ERROR, STOP_TOOL_FAILURE, STOP_TIMEOUT}
+    error_count = sum(1 for score in scores if score.stop_reason in error_stop_reasons)
+    timeout_count = sum(1 for score in scores if score.stop_reason == STOP_TIMEOUT)
     max_step_aborts = sum(1 for score in scores if score.max_step_aborted)
     repeated_tool_rate = (
         round(sum(score.repeated_tool_call_rate for score in scores) / case_count, 4)
@@ -1151,6 +1232,12 @@ def _variant_report(variant: str, scores: list[RunScore]) -> VariantReport:
         case_count=case_count,
         passed=passed,
         pass_rate=round(passed / case_count, 4) if case_count else 0.0,
+        failed=len(failed),
+        failure_rate=round(len(failed) / case_count, 4) if case_count else 0.0,
+        error_count=error_count,
+        error_rate=round(error_count / case_count, 4) if case_count else 0.0,
+        timeout_count=timeout_count,
+        timeout_rate=round(timeout_count / case_count, 4) if case_count else 0.0,
         loop_count=len(loops),
         loop_rate=round(len(loops) / case_count, 4) if case_count else 0.0,
         max_step_abort_rate=round(max_step_aborts / case_count, 4) if case_count else 0.0,
@@ -1165,6 +1252,7 @@ def build_ab_report(
     run_results: list[RunResult | dict[str, Any]],
     *,
     source: str = REPORT_SOURCE_DETERMINISTIC,
+    formal: bool = False,
 ) -> ABReport:
     coerced = [_coerce_run_result(item) for item in run_results]
     cases_by_id = {
@@ -1197,8 +1285,23 @@ def build_ab_report(
             }
         )
 
-    evidentiary = source != REPORT_SOURCE_SIMULATED and all(result.executed for result in coerced)
-    notes = "" if evidentiary else "non-evidentiary: simulated or non-executed traces cannot prove loop behavior"
+    base_evidentiary = source != REPORT_SOURCE_SIMULATED and all(result.executed for result in coerced)
+    unreviewed_case_ids = sorted(
+        {
+            item["case"]["id"]
+            for item in run_results
+            if isinstance(item, dict) and "case" in item and not is_formal_case(item["case"])
+        }
+    )
+    evidentiary = base_evidentiary and (not formal or not unreviewed_case_ids)
+    notes_parts: list[str] = []
+    if not base_evidentiary:
+        notes_parts.append("non-evidentiary: simulated or non-executed traces cannot prove loop behavior")
+    if formal and unreviewed_case_ids:
+        notes_parts.append(
+            "non-evidentiary: unreviewed or low-confidence cases cannot support formal claims: "
+            + ", ".join(unreviewed_case_ids)
+        )
     return ABReport(
         variant_results={
             variant: _variant_report(variant, scores_by_variant[variant])
@@ -1207,7 +1310,7 @@ def build_ab_report(
         cases=case_rows,
         source=source,
         evidentiary=evidentiary,
-        notes=notes,
+        notes="; ".join(notes_parts),
     )
 
 
@@ -1216,6 +1319,7 @@ async def run_paired_evaluation(
     runners: dict[str, AgentVariantRunner],
     *,
     source: str = REPORT_SOURCE_DETERMINISTIC,
+    formal: bool = False,
 ) -> ABReport:
     missing = set(VARIANTS) - set(runners)
     if missing:
@@ -1227,4 +1331,4 @@ async def run_paired_evaluation(
         for variant in variant_order:
             result = await runners[variant].run_case(case)
             run_rows.append({"case": case, **result.as_dict()})
-    return build_ab_report(run_rows, source=source)
+    return build_ab_report(run_rows, source=source, formal=formal)

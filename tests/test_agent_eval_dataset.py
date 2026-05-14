@@ -62,6 +62,9 @@ AB_STOP_REASONS = {
     "human_input_required",
     "runtime_error",
 }
+REVIEW_STATUSES = {"draft", "needs_review", "approved", "rejected"}
+REVIEW_CONFIDENCES = {"low", "medium", "high"}
+CLAIM_SUPPORT_TYPES = {"direct_evidence", "calculation", "reviewed_inference"}
 
 
 def load_cases() -> list[dict]:
@@ -125,6 +128,15 @@ def test_cases_are_unique_and_structurally_valid():
                 assert hypothesis["hypothesis_notes"].strip()
         assert abs(sum(case["scoring"].values()) - 1.0) < 1e-9
         assert all(value >= 0 for value in case["scoring"].values())
+        review = case.get("label_review")
+        assert review, f"{case['id']} needs label_review"
+        assert review["status"] in REVIEW_STATUSES
+        assert review["confidence"] in REVIEW_CONFIDENCES
+        assert review["notes"].strip()
+        if review["status"] == "approved":
+            assert review["reviewer"].strip()
+            assert review["reviewed_at"].strip()
+            assert review["confidence"] != "low"
 
 
 def test_sources_and_evidence_are_real_and_traceable():
@@ -198,3 +210,37 @@ def test_loop_stability_cases_have_explicit_stop_behavior():
         assert case["loop_rules"]["max_total_steps"] <= case["max_steps"]
         assert case["loop_rules"]["max_same_tool_calls"] <= 3
         assert case["loop_rules"]["max_no_state_change_steps"] <= 3
+
+
+def test_approved_cases_have_claim_backing():
+    repo_root = DATASET_DIR.parents[1]
+    approved_cases = [
+        case
+        for case in load_cases()
+        if case["label_review"]["status"] == "approved"
+        and case["label_review"]["confidence"] != "low"
+    ]
+    assert approved_cases
+
+    for case in approved_cases:
+        claims = case.get("gold_answer_claims")
+        assert claims, f"{case['id']} needs gold_answer_claims"
+        sources = {source["id"]: source for source in case["available_sources"]}
+        for claim in claims:
+            assert claim["field"].strip()
+            assert claim["support_type"] in CLAIM_SUPPORT_TYPES
+            assert claim["field"] in case["gold_answer"], (
+                f"{case['id']} claim field does not exist in gold_answer: {claim['field']}"
+            )
+            if claim["support_type"] in {"direct_evidence", "reviewed_inference"}:
+                assert claim.get("evidence"), f"{case['id']} claim needs evidence"
+                for item in claim["evidence"]:
+                    source = sources[item["source_id"]]
+                    if source["type"] == "none":
+                        continue
+                    text = (repo_root / source["path"]).read_text(encoding="utf-8")
+                    assert item["quote"] in text
+            if claim["support_type"] == "calculation":
+                assert claim.get("calculation"), f"{case['id']} calculation claim needs metadata"
+            if claim["support_type"] == "reviewed_inference":
+                assert claim["review_note"].strip()

@@ -97,6 +97,209 @@
         }
       }
     },
+    "label_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "confidence", "notes"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["draft", "needs_review", "approved", "rejected"]
+        },
+        "reviewer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviewed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "required": ["reviewer", "reviewed_at"],
+            "properties": {
+              "reviewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reviewed_at": {
+                "type": "string",
+                "minLength": 1
+              },
+              "confidence": {
+                "type": "string",
+                "enum": ["medium", "high"]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": ["draft", "needs_review", "rejected"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "reviewer": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reviewed_at": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "gold_answer_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "value", "support_type"],
+        "properties": {
+          "field": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {},
+          "support_type": {
+            "type": "string",
+            "enum": [
+              "direct_evidence",
+              "calculation",
+              "reviewed_inference"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["source_id", "quote"],
+              "additionalProperties": false,
+              "properties": {
+                "source_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "quote": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "locator": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "calculation": {
+            "type": "object"
+          },
+          "review_note": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "support_type": {
+                  "const": "direct_evidence"
+                }
+              }
+            },
+            "then": {
+              "required": ["evidence"],
+              "properties": {
+                "evidence": {
+                  "minItems": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "support_type": {
+                  "const": "calculation"
+                }
+              }
+            },
+            "then": {
+              "required": ["calculation"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "support_type": {
+                  "const": "reviewed_inference"
+                }
+              }
+            },
+            "then": {
+              "required": ["evidence", "review_note"],
+              "properties": {
+                "evidence": {
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
     "expected_nodes": {
       "type": "array",
       "items": {

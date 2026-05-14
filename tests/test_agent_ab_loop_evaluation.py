@@ -1,12 +1,14 @@
 import json
 import subprocess
 import sys
+import asyncio
 from pathlib import Path
 
 import pytest
 
 from app.evaluation.agent_ab import (
     REPORT_SOURCE_DETERMINISTIC,
+    REPORT_SOURCE_LIVE,
     REPORT_SOURCE_SIMULATED,
     STOP_COMPLETED,
     STOP_CONTROLLED,
@@ -14,6 +16,7 @@ from app.evaluation.agent_ab import (
     STOP_LOOP_DETECTED,
     STOP_MAX_STEPS,
     STOP_RUNTIME_ERROR,
+    STOP_TIMEOUT,
     STOP_TOOL_FAILURE,
     VARIANT_LANGGRAPH_REACT_WORKER,
     VARIANT_LANGGRAPH,
@@ -25,9 +28,12 @@ from app.evaluation.agent_ab import (
     LinearReActRunner,
     TraceEvent,
     build_ab_report,
+    is_formal_case,
     run_paired_evaluation,
     score_run,
 )
+
+import scripts.run_agent_ab_eval as cli
 
 
 DATASET_DIR = Path(__file__).resolve().parents[1] / "datasets" / "agent_eval"
@@ -449,6 +455,160 @@ def test_report_requires_executed_variants_for_evidence():
     assert report.evidentiary is False
 
 
+def test_report_includes_error_and_timeout_rates():
+    case = case_by_id("loop_001")
+    report = build_ab_report(
+        [
+            {
+                "case": case,
+                "variant": VARIANT_REACT,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_REACT,
+                        step=1,
+                        action="timeout",
+                        state_before="a",
+                        state_after="a",
+                        state_diff={},
+                        stop_reason=STOP_TIMEOUT,
+                    )
+                ],
+                "final_output": "",
+                "stop_reason": STOP_TIMEOUT,
+                "executed": True,
+                "error": "timeout",
+            },
+            {
+                "case": case,
+                "variant": VARIANT_LANGGRAPH,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_LANGGRAPH,
+                        step=1,
+                        action="reviewer",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["final_report"]},
+                        stop_reason=STOP_CONTROLLED,
+                    )
+                ],
+                "final_output": "controlled stop",
+                "stop_reason": STOP_CONTROLLED,
+                "executed": True,
+            },
+        ],
+        source=REPORT_SOURCE_LIVE,
+        formal=True,
+    )
+
+    react = report.variants[VARIANT_REACT]["overall"]
+    assert react["failed"] == 1
+    assert react["failure_rate"] == 1.0
+    assert react["error_rate"] == 1.0
+    assert react["timeout_rate"] == 1.0
+
+
+def test_report_marks_unreviewed_cases_as_non_evidentiary_for_formal_claims():
+    case = case_by_id("rag_001")
+    report = build_ab_report(
+        [
+            {
+                "case": case,
+                "variant": VARIANT_REACT,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_REACT,
+                        step=1,
+                        action="react_final",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["final_output"]},
+                        stop_reason=STOP_COMPLETED,
+                    )
+                ],
+                "final_output": "ok",
+                "stop_reason": STOP_COMPLETED,
+                "executed": True,
+            },
+            {
+                "case": case,
+                "variant": VARIANT_LANGGRAPH,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_LANGGRAPH,
+                        step=1,
+                        action="controller",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["next_action"]},
+                        stop_reason=STOP_COMPLETED,
+                    )
+                ],
+                "final_output": "ok",
+                "stop_reason": STOP_COMPLETED,
+                "executed": True,
+            },
+        ],
+        source=REPORT_SOURCE_DETERMINISTIC,
+        formal=True,
+    )
+
+    assert is_formal_case(case) is False
+    assert report.evidentiary is False
+    assert "unreviewed" in report.notes
+
+
+def test_report_allows_approved_cases_as_formal_evidence():
+    case = case_by_id("loop_001")
+    report = build_ab_report(
+        [
+            {
+                "case": case,
+                "variant": VARIANT_REACT,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_REACT,
+                        step=1,
+                        action="react_tool",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["observations"]},
+                        tool_name="rag_search",
+                        tool_arguments={"query": case["user_query"]},
+                        stop_reason=STOP_LOOP_DETECTED,
+                    )
+                ],
+                "final_output": "",
+                "stop_reason": STOP_LOOP_DETECTED,
+                "executed": True,
+            },
+            {
+                "case": case,
+                "variant": VARIANT_LANGGRAPH,
+                "trace": [
+                    TraceEvent(
+                        variant=VARIANT_LANGGRAPH,
+                        step=1,
+                        action="reviewer",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["final_report"]},
+                        stop_reason=STOP_CONTROLLED,
+                    )
+                ],
+                "final_output": "controlled stop",
+                "stop_reason": STOP_CONTROLLED,
+                "executed": True,
+            },
+        ],
+        source=REPORT_SOURCE_DETERMINISTIC,
+        formal=True,
+    )
+
+    assert is_formal_case(case) is True
+    assert report.evidentiary is True
+
+
 @pytest.mark.asyncio
 async def test_runtime_errors_are_reported_as_stop_reasons():
     case = case_by_id("rag_001")
@@ -549,3 +709,107 @@ def test_cli_defaults_to_two_variants_without_ablation():
 
     assert set(report["variants"]) == {VARIANT_LANGGRAPH, VARIANT_REACT}
     assert VARIANT_LANGGRAPH_REACT_WORKER not in report["variants"]
+
+
+def test_cli_can_filter_approved_cases_for_formal_report():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_agent_ab_eval.py",
+            "--approved-only",
+            "--formal",
+            "--limit",
+            "1",
+        ],
+        cwd=DATASET_DIR.parents[1],
+        text=True,
+        capture_output=True,
+        timeout=60,
+        check=True,
+    )
+    report = json.loads(completed.stdout)
+
+    assert report["evidentiary"] is True
+    assert {row["case_id"] for row in report["cases"]} <= {"loop_001", "loop_002", "loop_003", "loop_004"}
+
+
+def test_cli_live_source_requires_explicit_live_runtime(monkeypatch):
+    called = {"live": False}
+
+    async def fake_create():
+        called["live"] = True
+        raise RuntimeError("live runtime requested")
+
+    monkeypatch.setattr(cli.LiveToolAdapter, "create", fake_create)
+    monkeypatch.setattr(cli, "_require_live_config", lambda: None)
+
+    with pytest.raises(RuntimeError, match="live runtime requested"):
+        asyncio_result = cli.run_cases(
+            [case_by_id("loop_001")],
+            REPORT_SOURCE_LIVE,
+            formal=True,
+        )
+        asyncio.run(asyncio_result)
+
+    assert called["live"] is True
+
+
+def test_cli_live_source_requires_llm_configuration(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY.*OPENAI_MODEL"):
+        cli._require_live_config()
+
+
+def test_run_cases_records_variant_timeout(monkeypatch):
+    case = case_by_id("loop_001")
+
+    class SlowRunner:
+        variant = VARIANT_REACT
+
+        async def run_case(self, case):
+            await asyncio.sleep(10)
+
+    class DoneRunner:
+        variant = VARIANT_LANGGRAPH
+
+        async def run_case(self, case):
+            return cli.RunResult(
+                case_id=case["id"],
+                variant=self.variant,
+                trace=[
+                    cli.TraceEvent(
+                        variant=self.variant,
+                        step=1,
+                        action="done",
+                        state_before="a",
+                        state_after="b",
+                        state_diff={"changed": ["final_output"]},
+                        stop_reason=STOP_CONTROLLED,
+                    )
+                ],
+                final_output="controlled stop",
+                stop_reason=STOP_CONTROLLED,
+            )
+
+    monkeypatch.setattr(
+        cli,
+        "make_runners",
+        lambda *args, **kwargs: {
+            VARIANT_LANGGRAPH: DoneRunner(),
+            VARIANT_REACT: SlowRunner(),
+        },
+    )
+
+    report = asyncio.run(
+        cli.run_cases(
+            [case],
+            REPORT_SOURCE_DETERMINISTIC,
+            formal=True,
+            variant_timeout_seconds=0.01,
+        )
+    )
+
+    assert report["variants"][VARIANT_REACT]["overall"]["timeout_rate"] == 1.0
+    assert report["cases"][1]["stop_reason"] == STOP_TIMEOUT

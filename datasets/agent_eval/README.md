@@ -1,90 +1,175 @@
-# Agent 评测数据集
+# Agent Evaluation Dataset
 
-该目录用于评测多 Agent 研究助手的执行稳定性和结果质量。数据集重点不是训练模型，而是为 LangGraph 工作流和线性 ReAct baseline 提供同一组可复现任务。
+This directory contains a versioned evaluation dataset for comparing a LangGraph multi-agent workflow with a linear ReAct baseline. The dataset is for evaluation, not model training.
 
-## 文件
+## Files
 
-- `eval_cases.jsonl`：评测样本，每行一个 JSON 对象。
-- `schema.json`：评测样本字段契约。
-- `README.md`：数据集说明和扩展规则。
+- `eval_cases.jsonl`: one JSON evaluation case per line.
+- `schema.json`: machine-readable case contract.
+- `README.md`: labeling, review, and extension rules.
+- `sources/`: frozen local sources used by evidence quotes.
 
-## 核心原则
+## Core Principle
 
-A/B 结论只能来自真实执行 trace。评测程序必须让 `langgraph_state_machine` 和 `linear_react_baseline` 都实际运行同一个 case；启用 worker ablation 时，还必须实际运行 `langgraph_react_worker`。每个执行结果都要记录节点或动作、工具调用、状态指纹、状态 diff、步数、停止原因和错误信息。
+A/B conclusions must come from observed runner traces. Dataset fields such as `ab_test.hypothesis_pass`, `hypothesis_loop`, and `hypothesis_stop_reason` are hypotheses only and must not be used as proof that LangGraph solved a ReAct loop.
 
-`ab_test` 字段只是实验假设说明。即使样本里写了 `hypothesis_pass`、`hypothesis_loop` 或 `hypothesis_stop_reason`，这些字段也不能作为 LangGraph 解决 ReAct 死循环的证据。
+For formal claims, the selected cases must also be reviewed. A case is formal evidence only when:
 
-## 样本字段
+- `label_review.status == "approved"`
+- `label_review.confidence != "low"`
+- `label_review.reviewer`, `label_review.reviewed_at`, and `label_review.notes` are non-empty
+- material `gold_answer` fields are backed by `gold_answer_claims`
 
-| 字段 | 说明 |
+Draft, rejected, missing-review, and low-confidence cases may be used for development runs, but reports containing them must be treated as non-evidentiary.
+
+## Case Fields
+
+| Field | Description |
 | --- | --- |
-| `id` | 样本唯一 ID，格式为 `<prefix>_<number>`。 |
-| `category` | 样本类别。 |
-| `difficulty` | 难度，取值为 `easy`、`medium`、`hard`。 |
-| `user_query` | 输入给 Agent 的用户任务。 |
-| `available_sources` | 可用资料快照或本地真实文件路径。 |
-| `gold_answer` | 标准答案或结构化判定信息。 |
-| `gold_behavior` | 正确行为描述，包括应完成、应拒绝、应挂起或应停止。 |
-| `evidence` | 支撑标准答案的证据片段，`quote` 必须能在对应 source 文件中逐字匹配。 |
-| `expected_nodes` | LangGraph 路径的预期节点，仅用于图工作流覆盖检查，不能用于惩罚 ReAct。 |
-| `expected_tools` | 预期调用或尝试调用的工具。 |
-| `max_steps` | 单次任务最大允许执行步数。 |
-| `loop_rules` | 死循环检测阈值，包括最大总步数、重复同工具同参数次数、连续无状态变化步数。 |
-| `ab_test` | 可选 A/B 假设说明，必须标记 `hypothesis_only: true`。 |
-| `scoring` | 评分权重，所有权重之和必须为 1.0。 |
+| `id` | Unique case ID, formatted as `<prefix>_<number>`. |
+| `category` | Evaluation category from `schema.json`. |
+| `difficulty` | `easy`, `medium`, or `hard`. |
+| `user_query` | User task sent to each agent variant. |
+| `available_sources` | Frozen local source metadata. |
+| `gold_answer` | Structured expected answer or judgment. |
+| `gold_answer_claims` | Claim-level support for approved cases. |
+| `gold_behavior` | Expected behavior, including completion, refusal, clarification, suspension, or stop behavior. |
+| `evidence` | Source quotes that must match local source files exactly. |
+| `expected_nodes` | Expected LangGraph node coverage; this must not penalize ReAct for missing LangGraph-only nodes. |
+| `expected_tools` | Expected tool calls or attempted tool calls. |
+| `max_steps` | Case-level execution budget. |
+| `loop_rules` | Loop thresholds: total steps, same-tool same-argument calls, and no-state-change steps. |
+| `ab_test` | Optional A/B hypothesis metadata. Must be `hypothesis_only: true`. |
+| `label_review` | Human review status used to decide whether the case can support formal conclusions. |
+| `scoring` | Metric weights. Values must sum to 1.0. |
+| `calculation` | Recomputable numeric metadata for financial cases. |
 
-## A/B 假设字段
+## Label Lifecycle
 
-`ab_test` 示例：
+- `draft`: early sample; structure may still change.
+- `needs_review`: structurally usable but not approved for formal claims.
+- `approved`: reviewed and eligible for formal reporting when confidence is not `low`.
+- `rejected`: retained for audit or redesign, but excluded from formal reporting.
+
+Recommended workflow:
+
+1. Freeze the source material under `datasets/agent_eval/sources/` or another stable local path.
+2. Write `user_query`, `gold_answer`, `gold_behavior`, `evidence`, `loop_rules`, and `scoring`.
+3. Add `gold_answer_claims` for every material `gold_answer` field.
+4. Set `label_review.status` to `needs_review`.
+5. Run dataset validation tests.
+6. Have a human reviewer inspect the source, gold answer, behavior, evidence, and loop thresholds.
+7. Mark the case `approved` only after review.
+
+## Gold Answer Claims
+
+Approved cases must explain why each material gold answer field is correct.
+
+Supported claim types:
+
+- `direct_evidence`: the claim is directly supported by one or more local evidence quotes.
+- `calculation`: the claim is supported by recomputable calculation metadata.
+- `reviewed_inference`: the claim requires human interpretation, but the reviewer confirmed it is supported by evidence.
+
+Example:
 
 ```json
 {
-  "experiment": "langgraph_vs_react_loop",
-  "primary_metric": "loop_rate",
-  "hypothesis_only": true,
-  "variants": {
-    "langgraph_state_machine": {
-      "hypothesis_pass": true,
-      "hypothesis_loop": false,
-      "hypothesis_stop_reason": "controlled_stop",
-      "hypothesis_notes": "预计 LangGraph 会在有限步骤内停止。"
-    },
-    "linear_react_baseline": {
-      "hypothesis_pass": false,
-      "hypothesis_loop": true,
-      "hypothesis_stop_reason": "loop_detected",
-      "hypothesis_notes": "预计 ReAct baseline 会暴露重复检索风险。"
-    },
-    "langgraph_react_worker": {
-      "hypothesis_pass": false,
-      "hypothesis_loop": true,
-      "hypothesis_stop_reason": "loop_detected",
-      "hypothesis_notes": "预计 worker-level ablation 会隔离 ReAct worker 在 LangGraph 外壳内的循环风险。"
+  "field": "should_stop",
+  "value": true,
+  "support_type": "reviewed_inference",
+  "evidence": [
+    {
+      "source_id": "finance_snapshot",
+      "quote": "This snapshot covers Apple fiscal years 2022, 2023, and 2024 only.",
+      "locator": "Apple Inc."
     }
+  ],
+  "review_note": "The requested 2026 year is outside the source coverage, so the correct behavior is to stop."
+}
+```
+
+## Formal Versus Development Runs
+
+Development run:
+
+```bash
+uv run python scripts/run_agent_ab_eval.py --case-id loop_001
+```
+
+Formal reviewed run:
+
+```bash
+uv run python scripts/run_agent_ab_eval.py --approved-only --formal --include-react-worker-ablation
+```
+
+`--approved-only` filters the selected cases to reviewed, non-low-confidence cases. `--formal` marks the report as intended for formal evidence; if unreviewed cases are included, the report is marked non-evidentiary.
+
+## Open-Source Dataset Adaptation
+
+Open-source benchmarks such as HotpotQA, GAIA, ToolBench, BFCL, or tau-bench can provide useful task ideas, but their rows must not enter the golden set directly.
+
+To adapt an external sample:
+
+1. Copy or summarize the needed source material into a frozen local source file.
+2. Convert the task into the local `eval_cases.jsonl` schema.
+3. Add local `evidence.quote` entries that match local files exactly.
+4. Add `gold_answer_claims`.
+5. Add `loop_rules` when the sample is used for loop stability.
+6. Set `label_review.status` to `needs_review`.
+7. Have a human reviewer approve it before formal use.
+
+Draft template:
+
+```json
+{
+  "id": "external_001",
+  "category": "rag_retrieval",
+  "difficulty": "medium",
+  "user_query": "Answer the adapted external benchmark question using the frozen source.",
+  "available_sources": [
+    {
+      "id": "external_source",
+      "type": "local_doc",
+      "path": "datasets/agent_eval/sources/external_sample_001.md",
+      "note": "Frozen local adaptation of an external benchmark source"
+    }
+  ],
+  "gold_answer": {
+    "answer": "expected answer"
+  },
+  "gold_answer_claims": [
+    {
+      "field": "answer",
+      "value": "expected answer",
+      "support_type": "direct_evidence",
+      "evidence": [
+        {
+          "source_id": "external_source",
+          "quote": "exact quote from local source"
+        }
+      ]
+    }
+  ],
+  "label_review": {
+    "status": "needs_review",
+    "reviewer": null,
+    "reviewed_at": null,
+    "confidence": "low",
+    "notes": "Imported draft; pending human review."
   }
 }
 ```
 
-这些字段只能帮助解释实验设计，不能参与实际 pass/fail 判定。实际判定必须使用 runner 输出的 `RunResult` 和 case 的 `loop_rules`。
+## Extension Rules
 
-## 建议指标
-
-- `Task Success Rate`：任务最终是否按 `gold_behavior` 完成。
-- `Loop Rate`：是否触发 `loop_rules` 中的循环判定。
-- `Max Step Abort Rate`：是否因超过最大步数终止。
-- `Repeated Tool Call Rate`：相同工具和等价参数的重复调用比例。
-- `No State Change Steps`：连续多少步没有状态变化。
-- `Stop Reason Counts`：`completed`、`controlled_stop`、`loop_detected`、`max_steps_exceeded`、`tool_failure`、`human_input_required`、`runtime_error` 的分布。
-
-## 扩展规则
-
-1. 每行必须是合法 JSON，不能有空行。
-2. `id` 必须唯一。
-3. `category` 必须属于 `schema.json` 中定义的枚举。
-4. `scoring` 权重之和必须为 1.0。
-5. `loop_stability` 样本必须明确写出停止、终止、挂起或说明缺失的正确行为。
-6. 所有非 `none` source 必须是真实存在的本地文件，不能使用占位路径。
-7. 需要答案级评测的样本必须提供 `gold_answer` 和 `evidence`。
-8. `evidence.quote` 必须能在 `available_sources` 对应文件中逐字找到。
-9. 财报计算类样本必须提供 `calculation`，并能由测试复算。
-10. ReAct baseline 不能因为缺少 `planner`、`worker`、`reviewer` 等 LangGraph 节点而被判失败。
+1. Every line in `eval_cases.jsonl` must be valid JSON.
+2. `id` must be unique.
+3. `category` must be declared in `schema.json`.
+4. `scoring` values must sum to 1.0.
+5. `loop_stability` cases must explicitly state the correct stop, suspend, clarify, or missing-information behavior.
+6. Every non-`none` source must point to a real local file.
+7. Every `evidence.quote` must be found verbatim in the referenced source.
+8. Financial calculation samples must include recomputable `calculation` metadata.
+9. Formal reports must use approved, non-low-confidence cases or be marked non-evidentiary.
+10. ReAct baseline must not fail solely because it lacks LangGraph-only nodes such as `planner`, `worker`, or `reviewer`.
