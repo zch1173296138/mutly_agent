@@ -99,3 +99,6 @@ class AgentState(TypedDict, total=False):
 
     # running_tasks 仅供调试/UI 展示，不参与核心调度逻辑
     running_tasks: Annotated[List[str], set_union]
+
+    planner_error: Annotated[Optional[str], take_last]
+    planner_failure: Annotated[Optional[bool], take_last]

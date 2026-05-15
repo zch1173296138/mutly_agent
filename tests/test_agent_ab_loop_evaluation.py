@@ -622,6 +622,27 @@ async def test_runtime_errors_are_reported_as_stop_reasons():
     assert result.error == "boom"
 
 
+def test_langgraph_planner_parse_failure_is_reported_as_planner_failure():
+    from evals.scripts.run_eval_langgraph import mock_tool_registry_module
+
+    case = case_by_id("loop_001")
+    model, tools = make_adapters(
+        case,
+        script=[
+            {"content": '{"intent": "complex_research"}'},
+            {"content": '[{"task_id":"t1","description":"broken","dependencies":[]'},
+            {"content": "still not json"},
+        ],
+    )
+    runner = LangGraphVariantRunner(model_adapter=model, tool_adapter=tools)
+
+    with mock_tool_registry_module(tools):
+        result = asyncio.run(runner.run_case(case))
+
+    assert result.stop_reason == "planner_failure"
+    assert any(event.action == "planner" and event.error for event in result.trace)
+
+
 @pytest.mark.asyncio
 async def test_tool_failures_are_reported_as_stop_reasons():
     case = case_by_id("tool_001")

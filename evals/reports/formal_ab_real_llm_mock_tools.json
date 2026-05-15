@@ -1,0 +1,2049 @@
+{
+  "runner_mode": "ab",
+  "mock_tools": true,
+  "llm_mode": "real_llm",
+  "evidentiary": false,
+  "variants": {
+    "langgraph_state_machine": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 0.5,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 0.0,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 2
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 120.023,
+          "trace": [],
+          "error": "case timed out after 120.023s",
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 0,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 120.023,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": true,
+          "status": "failed",
+          "task_status": "failed",
+          "stop_reason": "tool_failure",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "## ⚠️ 任务执行未完成\n\n以下 1 个子任务因配置问题无法完成：\n\n- **task_1**（检索 corner assignment 论文并定位到第 9 章的具体内容）\n  - 超过最大工具调用轮数 (5)，任务未能完成\n\n请检查配置（如 `mcp_servers.json`、MCP 服务是否启动、工具名称是否正确），修复后重试。",
+          "wall_time_sec": 74.196,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "4e77b4c1b0d2f88f",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "3b8c2385bacfd19c",
+              "state_after": "de20c35bbb4f361e",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": []
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 4,
+              "action": "reviewer",
+              "state_before": "de20c35bbb4f361e",
+              "state_after": "4282cc7d8d72cc19",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "tool_failure",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "failed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 4,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 74.196,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": true,
+          "status": "suspended",
+          "task_status": "suspended",
+          "stop_reason": "human_input_required",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "为了继续完成任务，我需要您补充以下信息：\n[需补充信息] 搜索任务缺少必要的关键信息：'未命名内部项目 X'是一个模糊描述，无法作为有效搜索关键词。请提供以下至少一项信息以便执行搜索：1) 项目的具体名称或代号；2) 所属公司/组织名称；3) 项目所属行业或领域；4) 其他可识别的项目特征（如发布时间、相关产品等）",
+          "wall_time_sec": 62.937,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "116c085cd1225d93",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "a79bcec494719477",
+              "state_after": "368bc1c97250e413",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "human_input_required",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "suspended",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 3,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 62.937,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 120.021,
+          "trace": [],
+          "error": "case timed out after 120.021s",
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 0,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 120.021,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    },
+    "linear_react_baseline": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 1.0,
+        "loop_rate": 0.5,
+        "avg_tool_calls": 3.0,
+        "duplicate_tool_call_ratio": 0.4167,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 0
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2026 annual report R&D expenses research development"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "Apple 2026 annual report R&D expenses research development"
+            }
+          ],
+          "final_output": "根据提供的文件内容，我需要指出一个重要限制：**该文件仅包含 Apple 2022、2023 和 2024 财年的数据，没有 2026 年的年报数据**。文件明确说明\"This snapshot covers Apple fiscal years 2022, 2023, and 2024 only\"。\n\n不过，我可以基于现有数据为您分析 Apple 研发费用的变化趋势：\n\n## Apple 研发费用变化分析（2022-2024 财年）\n\n| 财年 | 研发费用（百万美元） | 同比变化 | 增长率 |\n|------|---------------------|----------|--------|\n| 2022 | 26,251 | - | - |\n| 2023 | 29,915 | +3,664 | +13.96% |\n| 2024 | 31,370 | +1,455 | +4.86% |\n\n### 主要发现：\n\n1. **持续增长趋势**：Apple 研发费用连续三年增长，从 2022 年的 262.51 亿美元增至 2024 年的 313.70 亿美元\n\n2. **增速放缓**：2023 年增长率较高（13.96%），2024 年增速有所放缓（4.86%）\n\n3. **两年累计增长**：2022-2024 年累计增长 5,119 百万美元，增幅约 19.5%\n\n### 数据来源：\n- **Apple source**: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K\n- **快照日期**: 2026-05-12\n- **文件用途**: Agent 评测数据集的离线财报问答样本\n\n---\n\n**注意**：如需获取 Apple 2026 年年报的研发费用数据，建议访问 Apple 投资者关系官网或 SEC 数据库查询最新的 Form 10-K 文件。",
+          "wall_time_sec": 23.316,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "e71f25ce6142bba4",
+              "state_after": "2713e6c18344d606",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2026 annual report R&D expenses research development"
+              },
+              "tool_argument_hash": "0c5a83f2e5096521",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "2713e6c18344d606",
+              "state_after": "d47cc300ed431303",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 23.316,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "failed",
+          "task_status": "failed",
+          "stop_reason": "loop_detected",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "react",
+              "react",
+              "react",
+              "react",
+              "react",
+              "react"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react",
+            "react",
+            "react",
+            "react",
+            "react"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章"
+              }
+            },
+            {
+              "step": 2,
+              "node": "react",
+              "tool_name": "pdf_parser",
+              "tool_arguments": {}
+            },
+            {
+              "step": 3,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            },
+            {
+              "step": 4,
+              "node": "react",
+              "tool_name": "pdf_parser",
+              "tool_arguments": {}
+            },
+            {
+              "step": 5,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            },
+            {
+              "step": 6,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "corner assignment 论文 第9章"
+            },
+            {},
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            },
+            {},
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            },
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            }
+          ],
+          "final_output": "",
+          "wall_time_sec": 25.939,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "39962767ec112dfe",
+              "state_after": "69cd1dc9647c39e4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章"
+              },
+              "tool_argument_hash": "a9450c09cfeb7ad1",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_tool",
+              "state_before": "69cd1dc9647c39e4",
+              "state_after": "290d9e02c8dd0eab",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "pdf_parser",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 3,
+              "action": "react_tool",
+              "state_before": "290d9e02c8dd0eab",
+              "state_after": "fee4c2d14307e3e4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 4,
+              "action": "react_tool",
+              "state_before": "fee4c2d14307e3e4",
+              "state_after": "bb25551510377ad7",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "pdf_parser",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 5,
+              "action": "react_tool",
+              "state_before": "bb25551510377ad7",
+              "state_after": "858ea8a515260034",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 6,
+              "action": "react_tool",
+              "state_before": "858ea8a515260034",
+              "state_after": "01cbdffd2d051a44",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": "loop_detected",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "failed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": false,
+            "case_id": "loop_002",
+            "total_steps": 6,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {
+                "rag_search": 4
+              },
+              "same_tool_same_args": {
+                "rag_search:{\"query\": \"corner assignment 论文 第9章 chapter 9\"}": 3
+              },
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 25.939,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 6,
+            "tool_counts": {
+              "rag_search": 4,
+              "pdf_parser": 2
+            },
+            "duplicate_tool_call_count": 3,
+            "duplicate_tool_call_ratio": 0.5
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "未命名内部项目 X 公开资料"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "未命名内部项目 X 公开资料"
+            }
+          ],
+          "final_output": "## 关于\"未命名内部项目 X\"的调查报告\n\n### 调查结论\n\n**无法找到任何关于\"未命名内部项目 X\"的公开资料。**\n\n### 原因说明\n\n经过检索分析，发现以下关键问题：\n\n1. **实体未明确指定**：您提到的\"内部项目 X\"是一个未命名的、模糊的项目标识。\"X\"通常用作占位符，而非实际项目名称。\n\n2. **无公开记录**：根据现有资料库检索，没有任何公开来源能够识别或关联到名为\"Internal Project X\"的实体。\n\n3. **内部项目性质**：如果这确实是一个\"内部项目\"，按定义这类项目通常：\n   - 不对外公开\n   - 没有公开文档\n   - 仅限组织内部人员访问\n\n### 建议\n\n如需获取该项目的相关信息，建议：\n\n1. **提供具体项目名称**：如果知道项目的实际名称或代号，请提供以便进一步检索\n2. **联系相关部门**：内部项目信息通常需要通过组织内部渠道获取\n3. **提供更多上下文**：如所属公司、行业、项目类型等信息，有助于缩小搜索范围\n\n---\n\n**报告状态**：完成（无可用公开资料）",
+          "wall_time_sec": 15.368,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "779961b26af7faa8",
+              "state_after": "b00efa4a54f85da7",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "未命名内部项目 X 公开资料"
+              },
+              "tool_argument_hash": "605a42203b408bd5",
+              "tool_output_summary": "# Dataset Control Sources\n\n本文件用于构造可复现的负例和边界样本。\n\nNo source in this dataset identifies an entity named Internal Project X.\n\nThe control source is used to evaluate whether an agent stops when the entity is underspecified.\n",
+              "tool_output_hash": "b4dd56415cf13018",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "b00efa4a54f85da7",
+              "state_after": "659275070f46bd9b",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 15.368,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "failed",
+          "task_status": "failed",
+          "stop_reason": "loop_detected",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "react",
+              "react",
+              "react",
+              "react"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react",
+            "react",
+            "react"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2024年研发费用 R&D expense"
+              }
+            },
+            {
+              "step": 2,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {}
+            },
+            {
+              "step": 3,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {}
+            },
+            {
+              "step": 4,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {}
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "Apple 2024年研发费用 R&D expense"
+            },
+            {},
+            {},
+            {}
+          ],
+          "final_output": "",
+          "wall_time_sec": 38.438,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "8ad0ee755cdddbc2",
+              "state_after": "5d77938df74608ee",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2024年研发费用 R&D expense"
+              },
+              "tool_argument_hash": "f17c11bdcb3ddad0",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_tool",
+              "state_before": "5d77938df74608ee",
+              "state_after": "58a7fb27a7beb290",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 3,
+              "action": "react_tool",
+              "state_before": "58a7fb27a7beb290",
+              "state_after": "6701d7fc7d55d007",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 4,
+              "action": "react_tool",
+              "state_before": "6701d7fc7d55d007",
+              "state_after": "228410ea2bb694f6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": "loop_detected",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "failed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": false,
+            "case_id": "loop_004",
+            "total_steps": 4,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {
+                "calculator": 3
+              },
+              "same_tool_same_args": {
+                "calculator:{}": 3
+              },
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 38.438,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 4,
+            "tool_counts": {
+              "web_search": 1,
+              "calculator": 3
+            },
+            "duplicate_tool_call_count": 2,
+            "duplicate_tool_call_ratio": 0.5
+          }
+        }
+      ]
+    },
+    "langgraph_react_worker": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 0.5,
+        "loop_rate": 0.25,
+        "avg_tool_calls": 2.25,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.25,
+        "stuck_running_count": 2
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 120.024,
+          "trace": [],
+          "error": "case timed out after 120.024s",
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 0,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 120.024,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "failed",
+          "task_status": "failed",
+          "stop_reason": "max_steps_exceeded",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker",
+              "worker"
+            ],
+            "missing_nodes": [
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker",
+            "worker"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文"
+              }
+            },
+            {
+              "step": 5,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            },
+            {
+              "step": 6,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment chapter 9 section 9 conclusion"
+              }
+            },
+            {
+              "step": 7,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Optimizing Corner Assignment of Submap Surfaces IMR24 full paper chapter 9"
+              }
+            },
+            {
+              "step": 8,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" PDF download full text"
+              }
+            },
+            {
+              "step": 9,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "IMR24 proceedings corner assignment submap surfaces PDF"
+              }
+            },
+            {
+              "step": 10,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" Shengyong Cai full paper structure sections"
+              }
+            },
+            {
+              "step": 11,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper length sections conclusion"
+              }
+            },
+            {
+              "step": 12,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper sections list table of contents"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "corner assignment 论文"
+            },
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            },
+            {
+              "query": "corner assignment chapter 9 section 9 conclusion"
+            },
+            {
+              "query": "Optimizing Corner Assignment of Submap Surfaces IMR24 full paper chapter 9"
+            },
+            {
+              "query": "\"Optimizing Corner Assignment of Submap Surfaces\" PDF download full text"
+            },
+            {
+              "query": "IMR24 proceedings corner assignment submap surfaces PDF"
+            },
+            {
+              "query": "\"Optimizing Corner Assignment of Submap Surfaces\" Shengyong Cai full paper structure sections"
+            },
+            {
+              "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper length sections conclusion"
+            },
+            {
+              "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper sections list table of contents"
+            }
+          ],
+          "final_output": "",
+          "wall_time_sec": 87.505,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "2a77f2251250ed4a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 3,
+              "action": "worker",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文"
+              },
+              "tool_argument_hash": "dc1098853f6d1168",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 5,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 6,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment chapter 9 section 9 conclusion"
+              },
+              "tool_argument_hash": "146d0068fbb8455b",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 7,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Optimizing Corner Assignment of Submap Surfaces IMR24 full paper chapter 9"
+              },
+              "tool_argument_hash": "4fc6dedefeb1b079",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 8,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" PDF download full text"
+              },
+              "tool_argument_hash": "a4d6c923f467a5fa",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 9,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "IMR24 proceedings corner assignment submap surfaces PDF"
+              },
+              "tool_argument_hash": "ba5c340a154bc1a1",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 10,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" Shengyong Cai full paper structure sections"
+              },
+              "tool_argument_hash": "268a87644c9d5e62",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 11,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper length sections conclusion"
+              },
+              "tool_argument_hash": "f5d8d953e68f7f36",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 12,
+              "action": "worker_tool",
+              "state_before": "8d32b98d0d5b6496",
+              "state_after": "05208c40ece353b2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "\"Optimizing Corner Assignment of Submap Surfaces\" IMR24 paper sections list table of contents"
+              },
+              "tool_argument_hash": "752ed5959a6a23f7",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": "max_steps_exceeded",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "failed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": false,
+            "case_id": "loop_002",
+            "total_steps": 12,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": 12,
+              "same_tool_calls": {
+                "rag_search": 3,
+                "web_search": 6
+              },
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 87.505,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 9,
+            "tool_counts": {
+              "rag_search": 3,
+              "web_search": 6
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 60.578,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": []
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 60.578,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 120.014,
+          "trace": [],
+          "error": "case timed out after 120.014s",
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 0,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 120.014,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "pairwise_deltas": {
+    "langgraph_state_machine__vs__linear_react_baseline": {
+      "avg_tool_calls": -3.0,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": -0.4167,
+      "loop_rate": -0.5,
+      "max_step_violation_rate": 0.0,
+      "stuck_running_count": 2,
+      "termination_rate": -0.5
+    },
+    "langgraph_state_machine__vs__langgraph_react_worker": {
+      "avg_tool_calls": -2.25,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": 0.0,
+      "loop_rate": -0.25,
+      "max_step_violation_rate": -0.25,
+      "stuck_running_count": 0,
+      "termination_rate": 0.0
+    },
+    "langgraph_react_worker__vs__linear_react_baseline": {
+      "avg_tool_calls": -0.75,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": -0.4167,
+      "loop_rate": -0.25,
+      "max_step_violation_rate": 0.25,
+      "stuck_running_count": 2,
+      "termination_rate": -0.5
+    }
+  }
+}

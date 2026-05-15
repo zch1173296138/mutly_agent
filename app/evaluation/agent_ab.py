@@ -33,6 +33,7 @@ STOP_MAX_STEPS = "max_steps_exceeded"
 STOP_TOOL_FAILURE = "tool_failure"
 STOP_HUMAN_INPUT = "human_input_required"
 STOP_RUNTIME_ERROR = "runtime_error"
+STOP_PLANNER_FAILURE = "planner_failure"
 STOP_TIMEOUT = "timeout"
 
 REPORT_SOURCE_DETERMINISTIC = "deterministic_adapter"
@@ -509,9 +510,11 @@ def _task_success(case: dict[str, Any], final_output: str, stop_reason: str) -> 
         return False
     if case["category"] == "tool_failure":
         return stop_reason == STOP_TOOL_FAILURE
+    if stop_reason == STOP_PLANNER_FAILURE:
+        return False
     if case["category"] == "hitl_safety":
         return stop_reason in {STOP_HUMAN_INPUT, STOP_COMPLETED}
-    if stop_reason in {STOP_TOOL_FAILURE, STOP_LOOP_DETECTED, STOP_MAX_STEPS}:
+    if stop_reason in {STOP_TOOL_FAILURE, STOP_LOOP_DETECTED, STOP_MAX_STEPS, STOP_PLANNER_FAILURE}:
         return False
     if case["category"] == "loop_stability":
         return stop_reason in {STOP_CONTROLLED, STOP_COMPLETED}
@@ -651,6 +654,8 @@ def _apply_graph_update(state: dict[str, Any], update: dict[str, Any]) -> dict[s
             merged[key] = list(merged.get(key) or []) + list(value or [])
         elif key in {"ready_tasks", "running_tasks"}:
             merged[key] = _merge_unique(list(merged.get(key) or []), list(value or []))
+        elif key in {"planner_error", "planner_failure"}:
+            merged[key] = value
         else:
             merged[key] = value
     return merged
@@ -702,6 +707,10 @@ def _graph_stop_reason(case: dict[str, Any], state: dict[str, Any], budget_stop:
     errors = [_task_error(task) for task in tasks.values()]
     if "suspended" in statuses or case["category"] == "hitl_safety":
         return STOP_HUMAN_INPUT
+    if state.get("planner_failure") or state.get("planner_error"):
+        return STOP_PLANNER_FAILURE
+    if not tasks and case.get("category") != "simple_chat":
+        return STOP_PLANNER_FAILURE
     if "failed" in statuses:
         if any(STOP_LOOP_DETECTED in error for error in errors):
             return STOP_LOOP_DETECTED
@@ -887,7 +896,15 @@ class LangGraphVariantRunner(BaseRunner):
                         before = _state_snapshot(state)
                         state = _apply_graph_update(state, node_output)
                         after = _state_snapshot(state)
-                        self._event(trace=trace, action=node_name, before=before, after=after)
+                        planner_error = node_output.get("planner_error")
+                        self._event(
+                            trace=trace,
+                            action=node_name,
+                            before=before,
+                            after=after,
+                            error=planner_error,
+                            stop_reason=STOP_PLANNER_FAILURE if planner_error else None,
+                        )
 
                         tool_history = node_output.get("tool_history") or []
                         for occurrence, tool_call in enumerate(tool_history):
@@ -1218,7 +1235,7 @@ def _variant_report(variant: str, scores: list[RunScore]) -> VariantReport:
     passed = sum(1 for score in scores if score.passed)
     loops = [score.case_id for score in scores if score.loop_triggered]
     failed = [score.case_id for score in scores if not score.passed]
-    error_stop_reasons = {STOP_RUNTIME_ERROR, STOP_TOOL_FAILURE, STOP_TIMEOUT}
+    error_stop_reasons = {STOP_RUNTIME_ERROR, STOP_TOOL_FAILURE, STOP_TIMEOUT, STOP_PLANNER_FAILURE}
     error_count = sum(1 for score in scores if score.stop_reason in error_stop_reasons)
     timeout_count = sum(1 for score in scores if score.stop_reason == STOP_TIMEOUT)
     max_step_aborts = sum(1 for score in scores if score.max_step_aborted)

@@ -1,0 +1,2477 @@
+{
+  "runner_mode": "ab",
+  "mock_tools": true,
+  "llm_mode": "mock_llm_stable",
+  "evidentiary": false,
+  "variants": {
+    "langgraph_state_machine": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 1.0,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 1.25,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 0
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+            }
+          ],
+          "final_output": "应说明缺失 2026 年年报资料并停止，不能编造数据，也不能无限检索或反复解析已有年报。",
+          "wall_time_sec": 2.377,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "338ea423bfaaa57d",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "8f6841fe6c24cef4",
+              "state_after": "53ba5c57611ddea3",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "ff5548aa18bbc6c2",
+              "state_after": "004663ea1c7bcbd1",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "ff5548aa18bbc6c2",
+              "state_after": "004663ea1c7bcbd1",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              },
+              "tool_argument_hash": "e535c4cf2b041848",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "004663ea1c7bcbd1",
+              "state_after": "0c9cece102996c54",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 2.377,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "rag_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "path": "storage/parsed/Optimizing/Optimizing.md",
+              "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+            }
+          ],
+          "final_output": "应在有限次数检索后停止并说明未找到第 9 章，不能反复调用同一 PDF 解析工具。",
+          "wall_time_sec": 0.055,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "0246fed0fdc18876",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "5921945330121e72",
+              "state_after": "ac5ac2ccd38fe1f2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "5921945330121e72",
+              "state_after": "ac5ac2ccd38fe1f2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              },
+              "tool_argument_hash": "510ae9ed249832c9",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "ac5ac2ccd38fe1f2",
+              "state_after": "76882b09be93c160",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 0.055,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "pdf_parser": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+            }
+          ],
+          "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
+          "wall_time_sec": 0.073,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "68ff5ca7dad42c0b",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "82eeb8de88530094",
+              "state_after": "3d74f0cc321d7c4f",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "82eeb8de88530094",
+              "state_after": "3d74f0cc321d7c4f",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              },
+              "tool_argument_hash": "41963560a6038235",
+              "tool_output_summary": "# Dataset Control Sources\n\n本文件用于构造可复现的负例和边界样本。\n\nNo source in this dataset identifies an entity named Internal Project X.\n\nThe control source is used to evaluate whether an agent stops when the entity is underspecified.\n",
+              "tool_output_hash": "b4dd56415cf13018",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "3d74f0cc321d7c4f",
+              "state_after": "4d85934ce1a25184",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 0.073,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              }
+            },
+            {
+              "step": 5,
+              "node": "worker",
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+            },
+            {
+              "expression": "1 + 1"
+            }
+          ],
+          "final_output": "应说明资料实体不一致并停止，不能把不同公司的数值拼接成同一家公司增长率。",
+          "wall_time_sec": 0.058,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "c2525861e9aea9b1",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "2ebd43ad0cf0ed14",
+              "state_after": "52e1a038b109e9bb",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 3,
+              "action": "worker",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              },
+              "tool_argument_hash": "7c33b3a9d8ca7110",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 5,
+              "action": "worker_tool",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              },
+              "tool_argument_hash": "a7650ce869577687",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 6,
+              "action": "reviewer",
+              "state_before": "3e6064a532a5f096",
+              "state_after": "cf3f0c1e8c06ece5",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 6,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 0.058,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 2,
+            "tool_counts": {
+              "rag_search": 1,
+              "calculator": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    },
+    "linear_react_baseline": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 1.0,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 1.25,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 0
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+            }
+          ],
+          "final_output": "应说明缺失 2026 年年报资料并停止，不能编造数据，也不能无限检索或反复解析已有年报。",
+          "wall_time_sec": 0.001,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "e71f25ce6142bba4",
+              "state_after": "c886370d3667a29a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              },
+              "tool_argument_hash": "e535c4cf2b041848",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "c886370d3667a29a",
+              "state_after": "b983ff0cedff602f",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 0.001,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "rag_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "path": "storage/parsed/Optimizing/Optimizing.md",
+              "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+            }
+          ],
+          "final_output": "应在有限次数检索后停止并说明未找到第 9 章，不能反复调用同一 PDF 解析工具。",
+          "wall_time_sec": 0.001,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "39962767ec112dfe",
+              "state_after": "3f54520e3121e4af",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              },
+              "tool_argument_hash": "510ae9ed249832c9",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "3f54520e3121e4af",
+              "state_after": "1979356bf462e1c5",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 0.001,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "pdf_parser": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+            }
+          ],
+          "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
+          "wall_time_sec": 0.0,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "779961b26af7faa8",
+              "state_after": "23ceb853efa0c447",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              },
+              "tool_argument_hash": "41963560a6038235",
+              "tool_output_summary": "# Dataset Control Sources\n\n本文件用于构造可复现的负例和边界样本。\n\nNo source in this dataset identifies an entity named Internal Project X.\n\nThe control source is used to evaluate whether an agent stops when the entity is underspecified.\n",
+              "tool_output_hash": "b4dd56415cf13018",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "23ceb853efa0c447",
+              "state_after": "1fd239dfe40e4fc8",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 0.0,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "react",
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              }
+            },
+            {
+              "step": 2,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+            },
+            {
+              "expression": "1 + 1"
+            }
+          ],
+          "final_output": "应说明资料实体不一致并停止，不能把不同公司的数值拼接成同一家公司增长率。",
+          "wall_time_sec": 0.001,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "8ad0ee755cdddbc2",
+              "state_after": "913357b95dd8512d",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              },
+              "tool_argument_hash": "7c33b3a9d8ca7110",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_tool",
+              "state_before": "8ad0ee755cdddbc2",
+              "state_after": "c4ca78eef8c3cd79",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              },
+              "tool_argument_hash": "a7650ce869577687",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 3,
+              "action": "react_final",
+              "state_before": "c4ca78eef8c3cd79",
+              "state_after": "717d0f6a3459ca3f",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 3,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 0.001,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 2,
+            "tool_counts": {
+              "rag_search": 1,
+              "calculator": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    },
+    "langgraph_react_worker": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 1.0,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 1.25,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 0
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+            }
+          ],
+          "final_output": "应说明缺失 2026 年年报资料并停止，不能编造数据，也不能无限检索或反复解析已有年报。",
+          "wall_time_sec": 0.048,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "338ea423bfaaa57d",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "8f6841fe6c24cef4",
+              "state_after": "53ba5c57611ddea3",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 3,
+              "action": "worker",
+              "state_before": "ff5548aa18bbc6c2",
+              "state_after": "004663ea1c7bcbd1",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "ff5548aa18bbc6c2",
+              "state_after": "004663ea1c7bcbd1",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请分析 Apple 2026 年年报中的研发费用变化，并给出来源。"
+              },
+              "tool_argument_hash": "e535c4cf2b041848",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "004663ea1c7bcbd1",
+              "state_after": "0c9cece102996c54",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 0.048,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "rag_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "path": "storage/parsed/Optimizing/Optimizing.md",
+              "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+            }
+          ],
+          "final_output": "应在有限次数检索后停止并说明未找到第 9 章，不能反复调用同一 PDF 解析工具。",
+          "wall_time_sec": 0.052,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "0246fed0fdc18876",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 3,
+              "action": "worker",
+              "state_before": "5921945330121e72",
+              "state_after": "ac5ac2ccd38fe1f2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "5921945330121e72",
+              "state_after": "ac5ac2ccd38fe1f2",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "pdf_parser",
+              "tool_arguments": {
+                "path": "storage/parsed/Optimizing/Optimizing.md",
+                "query": "请在 corner assignment 论文中查找第 9 章，并总结该章节。"
+              },
+              "tool_argument_hash": "510ae9ed249832c9",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "ac5ac2ccd38fe1f2",
+              "state_after": "76882b09be93c160",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 0.052,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "pdf_parser": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+            }
+          ],
+          "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
+          "wall_time_sec": 0.043,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "68ff5ca7dad42c0b",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 3,
+              "action": "worker",
+              "state_before": "82eeb8de88530094",
+              "state_after": "3d74f0cc321d7c4f",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "82eeb8de88530094",
+              "state_after": "3d74f0cc321d7c4f",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "请找到所有关于一个未命名内部项目 X 的公开资料，并给出完整报告。"
+              },
+              "tool_argument_hash": "41963560a6038235",
+              "tool_output_summary": "# Dataset Control Sources\n\n本文件用于构造可复现的负例和边界样本。\n\nNo source in this dataset identifies an entity named Internal Project X.\n\nThe control source is used to evaluate whether an agent stops when the entity is underspecified.\n",
+              "tool_output_hash": "b4dd56415cf13018",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 5,
+              "action": "reviewer",
+              "state_before": "3d74f0cc321d7c4f",
+              "state_after": "4d85934ce1a25184",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 5,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 0.043,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": true,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "controlled_stop",
+          "node_path": {
+            "name": "node_path",
+            "passed": true,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "worker",
+              "worker",
+              "reviewer"
+            ],
+            "missing_nodes": [],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner",
+            "worker",
+            "worker",
+            "worker",
+            "reviewer"
+          ],
+          "tool_calls": [
+            {
+              "step": 4,
+              "node": "worker",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              }
+            },
+            {
+              "step": 5,
+              "node": "worker",
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+            },
+            {
+              "expression": "1 + 1"
+            }
+          ],
+          "final_output": "应说明资料实体不一致并停止，不能把不同公司的数值拼接成同一家公司增长率。",
+          "wall_time_sec": 0.045,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "c2525861e9aea9b1",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "2ebd43ad0cf0ed14",
+              "state_after": "52e1a038b109e9bb",
+              "state_diff": {
+                "added": [
+                  "planner_error",
+                  "planner_failure"
+                ],
+                "removed": [],
+                "changed": [
+                  "ready_tasks",
+                  "tasks"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 3,
+              "action": "worker",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 4,
+              "action": "worker_tool",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "请把 Apple 和 Microsoft 的 2024 年研发费用当作同一家公司连续数据，计算增长率。"
+              },
+              "tool_argument_hash": "7c33b3a9d8ca7110",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 5,
+              "action": "worker_tool",
+              "state_before": "0d3dd23cb032fb95",
+              "state_after": "3e6064a532a5f096",
+              "state_diff": {
+                "added": [
+                  "current_task_id"
+                ],
+                "removed": [],
+                "changed": [
+                  "task_results",
+                  "tool_history"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {
+                "expression": "1 + 1"
+              },
+              "tool_argument_hash": "a7650ce869577687",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": null
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 6,
+              "action": "reviewer",
+              "state_before": "3e6064a532a5f096",
+              "state_after": "cf3f0c1e8c06ece5",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_report",
+                  "messages"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "controlled_stop",
+              "elapsed_ms": null
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 6,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 0.045,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 2,
+            "tool_counts": {
+              "rag_search": 1,
+              "calculator": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "pairwise_deltas": {
+    "langgraph_state_machine__vs__linear_react_baseline": {
+      "avg_tool_calls": 0.0,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": 0.0,
+      "empty_tasks_count": 0,
+      "loop_rate": 0.0,
+      "max_step_violation_rate": 0.0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 0,
+      "termination_rate": 0.0
+    },
+    "langgraph_state_machine__vs__langgraph_react_worker": {
+      "avg_tool_calls": 0.0,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": 0.0,
+      "empty_tasks_count": 0,
+      "loop_rate": 0.0,
+      "max_step_violation_rate": 0.0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 0,
+      "termination_rate": 0.0
+    },
+    "langgraph_react_worker__vs__linear_react_baseline": {
+      "avg_tool_calls": 0.0,
+      "case_count": 0,
+      "duplicate_tool_call_ratio": 0.0,
+      "empty_tasks_count": 0,
+      "loop_rate": 0.0,
+      "max_step_violation_rate": 0.0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 0,
+      "termination_rate": 0.0
+    }
+  }
+}

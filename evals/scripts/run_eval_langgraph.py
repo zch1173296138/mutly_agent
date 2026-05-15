@@ -26,6 +26,7 @@ from app.evaluation.agent_ab import (
     STOP_HUMAN_INPUT,
     STOP_LOOP_DETECTED,
     STOP_MAX_STEPS,
+    STOP_PLANNER_FAILURE,
     STOP_RUNTIME_ERROR,
     STOP_TIMEOUT,
     STOP_TOOL_FAILURE,
@@ -200,7 +201,13 @@ def status_from_stop_reason(stop_reason: str | None) -> str:
         return "suspended"
     if stop_reason == STOP_TIMEOUT:
         return "running"
-    if stop_reason in {STOP_LOOP_DETECTED, STOP_MAX_STEPS, STOP_RUNTIME_ERROR, STOP_TOOL_FAILURE}:
+    if stop_reason in {
+        STOP_LOOP_DETECTED,
+        STOP_MAX_STEPS,
+        STOP_RUNTIME_ERROR,
+        STOP_TOOL_FAILURE,
+        STOP_PLANNER_FAILURE,
+    }:
         return "failed"
     return "running" if not stop_reason else "failed"
 
@@ -216,6 +223,11 @@ def run_dict_from_result(result: Any, *, status: str, wall_time_sec: float) -> d
         "final_output": result.final_output,
         "wall_time_sec": wall_time_sec,
         "error": result.error,
+        "planner_parse_error": result.stop_reason == STOP_PLANNER_FAILURE
+        or any(event.error for event in result.trace if event.action == "planner"),
+        "empty_tasks": result.stop_reason == STOP_PLANNER_FAILURE and not any(
+            event.action == "worker" for event in result.trace
+        ),
     }
 
 
@@ -229,6 +241,8 @@ def timeout_run(case: dict[str, Any], wall_time_sec: float) -> dict[str, Any]:
         "final_output": "",
         "wall_time_sec": wall_time_sec,
         "error": f"case timed out after {wall_time_sec:.3f}s",
+        "planner_parse_error": False,
+        "empty_tasks": False,
     }
 
 
@@ -262,6 +276,8 @@ def evaluate_run(case: dict[str, Any], run: dict[str, Any]) -> dict[str, Any]:
         "wall_time_sec": run.get("wall_time_sec"),
         "trace": run.get("trace") or [],
         "error": run.get("error"),
+        "planner_parse_error": bool(run.get("planner_parse_error")),
+        "empty_tasks": bool(run.get("empty_tasks")),
         "termination": termination,
         "no_loop": no_loop,
         "latency": latency,
@@ -280,6 +296,8 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "duplicate_tool_call_ratio": 0.0,
             "max_step_violation_rate": 0.0,
             "stuck_running_count": 0,
+            "planner_parse_error_count": 0,
+            "empty_tasks_count": 0,
         }
     terminated = sum(1 for row in rows if row["termination"]["passed"])
     loops = sum(1 for row in rows if not row["no_loop"]["passed"])
@@ -289,6 +307,8 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         1 for row in rows if row["no_loop"]["violations"]["max_total_steps"] is not None
     )
     stuck_running = sum(1 for row in rows if row["termination"]["status"] == "running")
+    planner_parse_errors = sum(1 for row in rows if row.get("planner_parse_error"))
+    empty_tasks = sum(1 for row in rows if row.get("empty_tasks"))
     return {
         "case_count": case_count,
         "termination_rate": round(terminated / case_count, 4),
@@ -299,6 +319,8 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "max_step_violation_rate": round(max_step_violations / case_count, 4),
         "stuck_running_count": stuck_running,
+        "planner_parse_error_count": planner_parse_errors,
+        "empty_tasks_count": empty_tasks,
     }
 
 

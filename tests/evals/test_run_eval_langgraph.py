@@ -16,6 +16,8 @@ SUMMARY_FIELDS = {
     "duplicate_tool_call_ratio",
     "max_step_violation_rate",
     "stuck_running_count",
+    "planner_parse_error_count",
+    "empty_tasks_count",
 }
 
 
@@ -192,3 +194,31 @@ def test_run_eval_ab_records_failed_variant_and_skips_its_pairwise_deltas(monkey
     assert "langgraph_state_machine__vs__langgraph_react_worker" in report["pairwise_deltas"]
     assert "langgraph_state_machine__vs__linear_react_baseline" not in report["pairwise_deltas"]
     assert "langgraph_react_worker__vs__linear_react_baseline" not in report["pairwise_deltas"]
+
+
+def test_summarize_counts_planner_parse_errors_and_empty_tasks():
+    from evals.scripts.run_eval_langgraph import summarize
+
+    base_row = {
+        "termination": {"passed": False, "status": "failed"},
+        "no_loop": {"passed": True, "violations": {"max_total_steps": None}},
+        "tool_repetition": {"tool_call_count": 0, "duplicate_tool_call_count": 0},
+    }
+    rows = [
+        {
+            **base_row,
+            "planner_parse_error": True,
+            "empty_tasks": True,
+        },
+        {
+            **base_row,
+            "termination": {"passed": True, "status": "completed"},
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+    ]
+
+    summary = summarize(rows)
+
+    assert summary["planner_parse_error_count"] == 1
+    assert summary["empty_tasks_count"] == 1
