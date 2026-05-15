@@ -133,6 +133,35 @@ python evals/scripts/run_eval_langgraph.py \
 - `max_step_violation_rate`
 - `stuck_running_count`
 
+## A/B Eval
+
+运行三种 runner variant 并输出 variants summary 与 pairwise deltas：
+
+```bash
+python evals/scripts/run_eval_ab.py \
+  --dataset evals/datasets/formal/formal_loop_minimal.jsonl \
+  --mock-tools \
+  --mock-llm-stable \
+  --timeout-sec 120
+```
+
+该命令会自动执行：
+
+- `langgraph_state_machine`
+- `linear_react_baseline`
+- `langgraph_react_worker`
+
+输出顶层包含：
+
+- `runner_mode = "ab"`
+- `mock_tools`
+- `llm_mode`
+- `evidentiary`
+- `variants`
+- `pairwise_deltas`
+
+可以把 `--mock-llm-stable` 换成 `--mock-llm-loop` 做负向控制，或换成 `--real-llm` 接入真实模型。`--real-llm --mock-tools` 只验证模型决策，不启动 MCP；完全真实证据运行需要去掉 `--mock-tools` 并配置 `mcp_servers.json`。
+
 ## 同步到 LangSmith
 
 先 dry-run 检查转换结果：
