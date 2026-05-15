@@ -1,3 +1,5 @@
+import argparse
+import asyncio
 import json
 import subprocess
 import sys
@@ -32,6 +34,10 @@ def _run_json(args: list[str]) -> dict:
     return json.loads(completed.stdout)
 
 
+def _formal_case_count() -> int:
+    return len(_load_jsonl(FORMAL_DATASET))
+
+
 def test_run_eval_langgraph_mock_stable_outputs_report_contract():
     report = _run_json(
         [
@@ -52,7 +58,7 @@ def test_run_eval_langgraph_mock_stable_outputs_report_contract():
     assert report["evidentiary"] is False
     assert SUMMARY_FIELDS.issubset(report["summary"])
     assert report["summary"]["stuck_running_count"] == 0
-    assert len(report["cases"]) == 4
+    assert len(report["cases"]) == _formal_case_count()
 
 
 def test_run_eval_langgraph_negative_control_loop_mode_reports_loop_signal():
@@ -90,7 +96,7 @@ def test_run_eval_langgraph_exposes_linear_react_variant():
 
     assert report["variant"] == "linear_react_baseline"
     assert report["llm_mode"] == "mock_llm_stable"
-    assert len(report["cases"]) == 4
+    assert len(report["cases"]) == _formal_case_count()
 
 
 def test_run_eval_langgraph_rejects_conflicting_llm_modes():
@@ -155,3 +161,34 @@ def test_run_eval_ab_outputs_variant_summaries_and_pairwise_deltas():
     assert set(report["variants"]) == expected_variants
     assert all(SUMMARY_FIELDS.issubset(row["summary"]) for row in report["variants"].values())
     assert "langgraph_state_machine__vs__linear_react_baseline" in report["pairwise_deltas"]
+
+
+def test_run_eval_ab_records_failed_variant_and_skips_its_pairwise_deltas(monkeypatch):
+    from evals.scripts import run_eval_ab
+
+    async def fake_run_dataset(args: argparse.Namespace) -> dict:
+        if args.variant == "linear_react_baseline":
+            raise RuntimeError("variant failed")
+        return {
+            "summary": {"termination_rate": 1.0, "loop_rate": 0.0},
+            "cases": [{"case_id": args.variant}],
+        }
+
+    monkeypatch.setattr(run_eval_ab, "run_dataset", fake_run_dataset)
+    args = argparse.Namespace(
+        dataset=FORMAL_DATASET,
+        mock_tools=True,
+        llm_mode="mock_llm_stable",
+        timeout_sec=30,
+    )
+
+    report = asyncio.run(run_eval_ab.run_ab(args))
+
+    assert report["variants"]["linear_react_baseline"] == {
+        "error": "variant failed",
+        "summary": None,
+        "cases": [],
+    }
+    assert "langgraph_state_machine__vs__langgraph_react_worker" in report["pairwise_deltas"]
+    assert "langgraph_state_machine__vs__linear_react_baseline" not in report["pairwise_deltas"]
+    assert "langgraph_react_worker__vs__linear_react_baseline" not in report["pairwise_deltas"]

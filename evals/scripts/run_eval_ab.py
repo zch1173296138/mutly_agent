@@ -40,8 +40,10 @@ def _numeric_delta(left: Any, right: Any) -> float | int:
 def pairwise_deltas(variant_reports: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
     deltas: dict[str, dict[str, Any]] = {}
     for left_name, right_name in PAIRWISE_COMPARISONS:
-        left = variant_reports[left_name]["summary"]
-        right = variant_reports[right_name]["summary"]
+        left = variant_reports.get(left_name, {}).get("summary")
+        right = variant_reports.get(right_name, {}).get("summary")
+        if not isinstance(left, dict) or not isinstance(right, dict):
+            continue
         common_keys = sorted(set(left) & set(right))
         deltas[f"{left_name}__vs__{right_name}"] = {
             key: _numeric_delta(left[key], right[key])
@@ -62,7 +64,14 @@ async def run_ab(args: argparse.Namespace) -> dict[str, Any]:
             llm_mode=args.llm_mode,
             timeout_sec=args.timeout_sec,
         )
-        variants[variant] = await run_dataset(single_args)
+        try:
+            variants[variant] = await run_dataset(single_args)
+        except Exception as exc:
+            variants[variant] = {
+                "error": str(exc) or exc.__class__.__name__,
+                "summary": None,
+                "cases": [],
+            }
 
     return {
         "runner_mode": "ab",
