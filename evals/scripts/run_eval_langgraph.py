@@ -24,11 +24,14 @@ from app.evaluation.agent_ab import (
     STOP_COMPLETED,
     STOP_CONTROLLED,
     STOP_HUMAN_INPUT,
+    STOP_LLM_CALL_TIMEOUT,
     STOP_LOOP_DETECTED,
     STOP_MAX_STEPS,
+    STOP_MAX_TOOL_ROUNDS_HIT,
     STOP_PLANNER_FAILURE,
     STOP_RUNTIME_ERROR,
     STOP_TIMEOUT,
+    STOP_TOOL_CALL_TIMEOUT,
     STOP_TOOL_FAILURE,
     VARIANT_LANGGRAPH,
     VARIANT_LANGGRAPH_REACT_WORKER,
@@ -52,6 +55,17 @@ RUNNER_VARIANTS = {
     VARIANT_LANGGRAPH_REACT_WORKER: LangGraphReactWorkerRunner,
     VARIANT_REACT: LinearReActRunner,
 }
+TIMEOUT_DIAGNOSTIC_FIELDS = (
+    "last_node",
+    "last_action",
+    "last_task_statuses",
+    "last_ready_tasks",
+    "last_running_tasks",
+    "tool_call_count",
+    "last_tool_name",
+    "last_tool_arguments",
+    "last_event_at",
+)
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -204,6 +218,9 @@ def status_from_stop_reason(stop_reason: str | None) -> str:
     if stop_reason in {
         STOP_LOOP_DETECTED,
         STOP_MAX_STEPS,
+        STOP_MAX_TOOL_ROUNDS_HIT,
+        STOP_LLM_CALL_TIMEOUT,
+        STOP_TOOL_CALL_TIMEOUT,
         STOP_RUNTIME_ERROR,
         STOP_TOOL_FAILURE,
         STOP_PLANNER_FAILURE,
@@ -212,8 +229,68 @@ def status_from_stop_reason(stop_reason: str | None) -> str:
     return "running" if not stop_reason else "failed"
 
 
+def _trace_as_dicts(trace: list[Any]) -> list[dict[str, Any]]:
+    return [event.as_dict() if hasattr(event, "as_dict") else dict(event) for event in trace]
+
+
+def _jsonable_for_report(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(k): _jsonable_for_report(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_jsonable_for_report(v) for v in value]
+    if isinstance(value, tuple):
+        return [_jsonable_for_report(v) for v in value]
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    if hasattr(value, "__dict__") and value.__class__.__module__.startswith("app."):
+        return _jsonable_for_report(vars(value))
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def _task_status_for_report(task: Any) -> str:
+    if isinstance(task, dict):
+        return str(task.get("status", "") or "")
+    return str(getattr(task, "status", "") or "")
+
+
+def _timeout_diagnostics(
+    trace: list[dict[str, Any]],
+    state: dict[str, Any] | None,
+    *,
+    last_event_at: float | None = None,
+) -> dict[str, Any]:
+    state = _jsonable_for_report(state or {})
+    tasks = state.get("tasks") if isinstance(state, dict) else {}
+    tasks = tasks if isinstance(tasks, dict) else {}
+    tool_events = [event for event in trace if event.get("tool_name")]
+    last_event = trace[-1] if trace else {}
+    last_tool_event = tool_events[-1] if tool_events else {}
+    planner_parse_error = bool(
+        state.get("planner_error") if isinstance(state, dict) else False
+    ) or any(event.get("action") == "planner" and event.get("error") for event in trace)
+    saw_planner = any(event.get("action") == "planner" for event in trace)
+    return {
+        "last_node": event_node(last_event) if last_event else None,
+        "last_action": last_event.get("action"),
+        "last_task_statuses": {
+            str(task_id): _task_status_for_report(task)
+            for task_id, task in tasks.items()
+        },
+        "last_ready_tasks": list(state.get("ready_tasks") or []) if isinstance(state, dict) else [],
+        "last_running_tasks": list(state.get("running_tasks") or []) if isinstance(state, dict) else [],
+        "tool_call_count": len(tool_events),
+        "last_tool_name": last_tool_event.get("tool_name"),
+        "last_tool_arguments": last_tool_event.get("tool_arguments") or None,
+        "last_event_at": last_event_at,
+        "planner_parse_error": planner_parse_error,
+        "empty_tasks": bool(saw_planner and not tasks),
+    }
+
+
 def run_dict_from_result(result: Any, *, status: str, wall_time_sec: float) -> dict[str, Any]:
-    trace = [event.as_dict() if hasattr(event, "as_dict") else dict(event) for event in result.trace]
+    trace = _trace_as_dicts(result.trace)
     return {
         "case_id": result.case_id,
         "status": status,
@@ -231,18 +308,23 @@ def run_dict_from_result(result: Any, *, status: str, wall_time_sec: float) -> d
     }
 
 
-def timeout_run(case: dict[str, Any], wall_time_sec: float) -> dict[str, Any]:
+def timeout_run(case: dict[str, Any], wall_time_sec: float, runner: Any | None = None) -> dict[str, Any]:
+    trace = _trace_as_dicts(list(getattr(runner, "partial_trace", []) or []))
+    diagnostics = _timeout_diagnostics(
+        trace,
+        getattr(runner, "partial_state", {}) if runner is not None else {},
+        last_event_at=getattr(runner, "last_event_at", None) if runner is not None else None,
+    )
     return {
         "case_id": case["id"],
         "status": "running",
         "task_status": "running",
         "stop_reason": STOP_TIMEOUT,
-        "trace": [],
+        "trace": trace,
         "final_output": "",
         "wall_time_sec": wall_time_sec,
         "error": f"case timed out after {wall_time_sec:.3f}s",
-        "planner_parse_error": False,
-        "empty_tasks": False,
+        **diagnostics,
     }
 
 
@@ -278,6 +360,11 @@ def evaluate_run(case: dict[str, Any], run: dict[str, Any]) -> dict[str, Any]:
         "error": run.get("error"),
         "planner_parse_error": bool(run.get("planner_parse_error")),
         "empty_tasks": bool(run.get("empty_tasks")),
+        **{
+            field: run.get(field)
+            for field in TIMEOUT_DIAGNOSTIC_FIELDS
+            if field in run
+        },
         "termination": termination,
         "no_loop": no_loop,
         "latency": latency,
@@ -296,6 +383,12 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "duplicate_tool_call_ratio": 0.0,
             "max_step_violation_rate": 0.0,
             "stuck_running_count": 0,
+            "timeout_count": 0,
+            "max_tool_rounds_hit_count": 0,
+            "llm_call_timeout_count": 0,
+            "tool_call_timeout_count": 0,
+            "human_input_required_count": 0,
+            "controlled_stop_count": 0,
             "planner_parse_error_count": 0,
             "empty_tasks_count": 0,
         }
@@ -307,6 +400,20 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         1 for row in rows if row["no_loop"]["violations"]["max_total_steps"] is not None
     )
     stuck_running = sum(1 for row in rows if row["termination"]["status"] == "running")
+    timeout_count = sum(1 for row in rows if row.get("stop_reason") == STOP_TIMEOUT)
+    max_tool_rounds_hit_count = sum(
+        1 for row in rows if row.get("stop_reason") == STOP_MAX_TOOL_ROUNDS_HIT
+    )
+    llm_call_timeout_count = sum(
+        1 for row in rows if row.get("stop_reason") == STOP_LLM_CALL_TIMEOUT
+    )
+    tool_call_timeout_count = sum(
+        1 for row in rows if row.get("stop_reason") == STOP_TOOL_CALL_TIMEOUT
+    )
+    human_input_required_count = sum(
+        1 for row in rows if row.get("stop_reason") == STOP_HUMAN_INPUT
+    )
+    controlled_stop_count = sum(1 for row in rows if row.get("stop_reason") == STOP_CONTROLLED)
     planner_parse_errors = sum(1 for row in rows if row.get("planner_parse_error"))
     empty_tasks = sum(1 for row in rows if row.get("empty_tasks"))
     return {
@@ -319,6 +426,12 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "max_step_violation_rate": round(max_step_violations / case_count, 4),
         "stuck_running_count": stuck_running,
+        "timeout_count": timeout_count,
+        "max_tool_rounds_hit_count": max_tool_rounds_hit_count,
+        "llm_call_timeout_count": llm_call_timeout_count,
+        "tool_call_timeout_count": tool_call_timeout_count,
+        "human_input_required_count": human_input_required_count,
+        "controlled_stop_count": controlled_stop_count,
         "planner_parse_error_count": planner_parse_errors,
         "empty_tasks_count": empty_tasks,
     }
@@ -350,7 +463,10 @@ async def run_case(
         with registry_context:
             result = await asyncio.wait_for(runner.run_case(case), timeout=timeout_sec)
     except asyncio.TimeoutError:
-        return evaluate_run(case, timeout_run(case, round(time.perf_counter() - started, 3)))
+        return evaluate_run(
+            case,
+            timeout_run(case, round(time.perf_counter() - started, 3), runner=runner),
+        )
 
     wall_time_sec = round((time.perf_counter() - started), 3)
     status = status_from_stop_reason(result.stop_reason)

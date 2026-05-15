@@ -120,7 +120,7 @@ async def _repair_tasks_json(raw_content: str, parse_error: Exception) -> Dict[s
 
 def _planner_failure(error: Exception | str) -> dict:
     return {
-        "tasks": {},
+        "tasks": {"__clear__": True},
         "ready_tasks": [],
         "running_tasks": [],
         "planner_error": f"planner_parse_error: {error}",

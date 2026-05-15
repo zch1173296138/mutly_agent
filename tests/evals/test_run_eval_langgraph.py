@@ -16,6 +16,12 @@ SUMMARY_FIELDS = {
     "duplicate_tool_call_ratio",
     "max_step_violation_rate",
     "stuck_running_count",
+    "timeout_count",
+    "max_tool_rounds_hit_count",
+    "llm_call_timeout_count",
+    "tool_call_timeout_count",
+    "human_input_required_count",
+    "controlled_stop_count",
     "planner_parse_error_count",
     "empty_tasks_count",
 }
@@ -196,10 +202,94 @@ def test_run_eval_ab_records_failed_variant_and_skips_its_pairwise_deltas(monkey
     assert "langgraph_react_worker__vs__linear_react_baseline" not in report["pairwise_deltas"]
 
 
+def test_timeout_run_preserves_partial_trace_and_timeout_diagnostics():
+    from app.evaluation.agent_ab import TraceEvent, VARIANT_LANGGRAPH
+    from evals.scripts import run_eval_langgraph
+
+    class SlowPartialRunner:
+        variant = VARIANT_LANGGRAPH
+
+        def __init__(self, *args, **kwargs):
+            self.partial_trace = []
+            self.partial_state = {}
+            self.last_event_at = None
+
+        async def run_case(self, case):
+            self.partial_state = {
+                "tasks": {"task_1": {"status": "running"}},
+                "ready_tasks": ["task_2"],
+                "running_tasks": ["task_1"],
+            }
+            self.partial_trace.append(
+                TraceEvent(
+                    variant=VARIANT_LANGGRAPH,
+                    step=1,
+                    action="planner",
+                    state_before="a",
+                    state_after="b",
+                    state_diff={"changed": ["tasks"]},
+                )
+            )
+            self.partial_trace.append(
+                TraceEvent(
+                    variant=VARIANT_LANGGRAPH,
+                    step=2,
+                    action="worker_tool",
+                    state_before="b",
+                    state_after="c",
+                    state_diff={"changed": ["tool_history"]},
+                    tool_name="rag_search",
+                    tool_arguments={"query": "q"},
+                    tool_output="partial evidence",
+                )
+            )
+            await asyncio.sleep(10)
+
+    case = {
+        "id": "timeout_partial",
+        "category": "loop_stability",
+        "user_query": "q",
+        "expected_nodes": ["planner", "worker"],
+        "loop_rules": {
+            "max_total_steps": 10,
+            "max_same_tool_calls": 3,
+            "max_same_tool_same_args": 2,
+            "max_no_state_change_steps": 5,
+        },
+    }
+    original = run_eval_langgraph.RUNNER_VARIANTS[VARIANT_LANGGRAPH]
+    run_eval_langgraph.RUNNER_VARIANTS[VARIANT_LANGGRAPH] = SlowPartialRunner
+    try:
+        row = asyncio.run(
+            run_eval_langgraph.run_case(
+                case,
+                mock_tools=True,
+                llm_mode=run_eval_langgraph.LLM_MODE_MOCK_STABLE,
+                variant=VARIANT_LANGGRAPH,
+                timeout_sec=0.01,
+                live_tool_adapter=None,
+            )
+        )
+    finally:
+        run_eval_langgraph.RUNNER_VARIANTS[VARIANT_LANGGRAPH] = original
+
+    assert row["stop_reason"] == "timeout"
+    assert [event["action"] for event in row["trace"]] == ["planner", "worker_tool"]
+    assert row["last_node"] == "worker"
+    assert row["last_action"] == "worker_tool"
+    assert row["last_task_statuses"] == {"task_1": "running"}
+    assert row["last_ready_tasks"] == ["task_2"]
+    assert row["last_running_tasks"] == ["task_1"]
+    assert row["tool_call_count"] == 1
+    assert row["last_tool_name"] == "rag_search"
+    assert row["last_tool_arguments"] == {"query": "q"}
+
+
 def test_summarize_counts_planner_parse_errors_and_empty_tasks():
     from evals.scripts.run_eval_langgraph import summarize
 
     base_row = {
+        "stop_reason": "runtime_error",
         "termination": {"passed": False, "status": "failed"},
         "no_loop": {"passed": True, "violations": {"max_total_steps": None}},
         "tool_repetition": {"tool_call_count": 0, "duplicate_tool_call_count": 0},
@@ -213,6 +303,38 @@ def test_summarize_counts_planner_parse_errors_and_empty_tasks():
         {
             **base_row,
             "termination": {"passed": True, "status": "completed"},
+            "stop_reason": "controlled_stop",
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+        {
+            **base_row,
+            "stop_reason": "timeout",
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+        {
+            **base_row,
+            "stop_reason": "max_tool_rounds_hit",
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+        {
+            **base_row,
+            "stop_reason": "llm_call_timeout",
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+        {
+            **base_row,
+            "stop_reason": "tool_call_timeout",
+            "planner_parse_error": False,
+            "empty_tasks": False,
+        },
+        {
+            **base_row,
+            "termination": {"passed": True, "status": "suspended"},
+            "stop_reason": "human_input_required",
             "planner_parse_error": False,
             "empty_tasks": False,
         },
@@ -222,3 +344,9 @@ def test_summarize_counts_planner_parse_errors_and_empty_tasks():
 
     assert summary["planner_parse_error_count"] == 1
     assert summary["empty_tasks_count"] == 1
+    assert summary["timeout_count"] == 1
+    assert summary["max_tool_rounds_hit_count"] == 1
+    assert summary["llm_call_timeout_count"] == 1
+    assert summary["tool_call_timeout_count"] == 1
+    assert summary["human_input_required_count"] == 1
+    assert summary["controlled_stop_count"] == 1

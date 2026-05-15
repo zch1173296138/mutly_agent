@@ -1,0 +1,1735 @@
+{
+  "runner_mode": "ab",
+  "mock_tools": true,
+  "llm_mode": "real_llm",
+  "evidentiary": false,
+  "variants": {
+    "langgraph_state_machine": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 0.0,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 0.0,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 4,
+        "timeout_count": 4,
+        "max_tool_rounds_hit_count": 0,
+        "llm_call_timeout_count": 0,
+        "tool_call_timeout_count": 0,
+        "human_input_required_count": 0,
+        "controlled_stop_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 4
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.331,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "338ea423bfaaa57d",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 19979.251
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "8f6841fe6c24cef4",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.331s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840002.5267096,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 30.331,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.037,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 15893.638
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.037s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840026.306051,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 30.037,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.036,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 9894.942
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.036s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840050.34848,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 30.036,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.032,
+          "trace": [
+            {
+              "variant": "langgraph_state_machine",
+              "step": 1,
+              "action": "controller",
+              "state_before": "c2525861e9aea9b1",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 8709.651
+            },
+            {
+              "variant": "langgraph_state_machine",
+              "step": 2,
+              "action": "planner",
+              "state_before": "2ebd43ad0cf0ed14",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.032s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840079.1995945,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 30.032,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    },
+    "linear_react_baseline": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 0.75,
+        "loop_rate": 0.25,
+        "avg_tool_calls": 2.0,
+        "duplicate_tool_call_ratio": 0.375,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 1,
+        "timeout_count": 1,
+        "max_tool_rounds_hit_count": 0,
+        "llm_call_timeout_count": 0,
+        "tool_call_timeout_count": 0,
+        "human_input_required_count": 0,
+        "controlled_stop_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 0
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2026 annual report R&D expenses research and development"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "Apple 2026 annual report R&D expenses research and development"
+            }
+          ],
+          "final_output": "根据提供的文档内容，我需要指出一个重要问题：\n\n## 数据限制说明\n\n文档中明确说明：**\"This snapshot covers Apple fiscal years 2022, 2023, and 2024 only\"**（此快照仅涵盖 Apple 2022、2023 和 2024 财年）\n\n因此，**文档中没有 Apple 2026 年年报的数据**。\n\n## 可提供的研发费用数据（2022-2024）\n\n| 财年 | 研发费用（百万美元） | 同比变化 |\n|------|---------------------|----------|\n| 2024 | 31,370 | +4.86% |\n| 2023 | 29,915 | +13.96% |\n| 2022 | 26,251 | - |\n\n### 变化趋势分析\n- **2022→2023**：研发费用增长 3,664 百万美元（+13.96%）\n- **2023→2024**：研发费用增长 1,455 百万美元（+4.86%）\n- **整体趋势**：研发费用持续增长，但增速有所放缓\n\n## 来源\n\n- **Apple source**: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K\n- **Snapshot date**: 2026-05-12\n\n---\n\n如果您需要 Apple 2026 年的实际年报数据，建议访问 Apple 投资者关系官网或 SEC 官网查询最新的 Form 10-K 文件。",
+          "wall_time_sec": 16.419,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "e71f25ce6142bba4",
+              "state_after": "b2dbfbaf0ad8e05d",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2026 annual report R&D expenses research and development"
+              },
+              "tool_argument_hash": "a981be1df9fe8094",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "b2dbfbaf0ad8e05d",
+              "state_after": "b8a775d678dfb802",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 16.419,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "failed",
+          "task_status": "failed",
+          "stop_reason": "loop_detected",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "react",
+              "react",
+              "react"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react",
+            "react"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            },
+            {
+              "step": 2,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            },
+            {
+              "step": 3,
+              "node": "react",
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            },
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            },
+            {
+              "query": "corner assignment 论文 第9章 chapter 9"
+            }
+          ],
+          "final_output": "",
+          "wall_time_sec": 11.481,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "39962767ec112dfe",
+              "state_after": "a830ee49bccf5d15",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_tool",
+              "state_before": "a830ee49bccf5d15",
+              "state_after": "41e7b66203315843",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 3,
+              "action": "react_tool",
+              "state_before": "41e7b66203315843",
+              "state_after": "f61b70e1e379a302",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "rag_search",
+              "tool_arguments": {
+                "query": "corner assignment 论文 第9章 chapter 9"
+              },
+              "tool_argument_hash": "1a5f602e238f3e26",
+              "tool_output_summary": "24th International Meshing Roundtable (IMR24)\n\n# Optimizing Corner Assignment of Submap Surfaces\n\nShengyong Caia , Timothy J. Tautgesb\n\naCD-adpaco, 10800 Pecan Blvd, Suite 210, Austin, Tx, 78750, U.S.A.\n\nbCD-adapco, 1500 Engineering Dr, Mad...",
+              "tool_output_hash": "59dfc7204d2b36b1",
+              "error": null,
+              "stop_reason": "loop_detected",
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "failed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": false,
+            "case_id": "loop_002",
+            "total_steps": 3,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {
+                "rag_search": 3
+              },
+              "same_tool_same_args": {
+                "rag_search:{\"query\": \"corner assignment 论文 第9章 chapter 9\"}": 3
+              },
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 11.481,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 3,
+            "tool_counts": {
+              "rag_search": 3
+            },
+            "duplicate_tool_call_count": 2,
+            "duplicate_tool_call_ratio": 0.6666666666666666
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "completed",
+          "task_status": "completed",
+          "stop_reason": "completed",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "react",
+              "react_final"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react_final"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "未命名内部项目 X 公开资料"
+              }
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "未命名内部项目 X 公开资料"
+            }
+          ],
+          "final_output": "根据我的搜索结果，我需要向您报告一个重要发现：\n\n## 关于\"未命名内部项目 X\"的调查报告\n\n### 调查结论\n\n**无法找到任何关于\"未命名内部项目 X\"的公开资料。**\n\n### 原因分析\n\n1. **实体未明确指定**：您提到的\"内部项目 X\"是一个未命名的、模糊的项目标识。\"X\"通常用作占位符或变量名，而非具体项目名称。\n\n2. **缺乏可搜索的关键信息**：要查找公开资料，需要至少以下信息之一：\n   - 项目的正式名称\n   - 所属公司/组织\n   - 项目类型或领域\n   - 相关时间范围\n   - 其他可识别的标识符\n\n3. **内部项目性质**：如果这确实是一个\"内部项目\"，按定义这类项目通常不对外公开，因此不会有公开资料可供查找。\n\n### 建议\n\n如果您需要查找特定项目的公开资料，请提供更具体的信息，例如：\n- 项目的完整名称\n- 所属公司或组织\n- 项目涉及的领域或行业\n- 任何其他可识别的细节\n\n这样我才能进行有效的搜索并为您提供准确的报告。",
+          "wall_time_sec": 13.061,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "779961b26af7faa8",
+              "state_after": "b00efa4a54f85da7",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "未命名内部项目 X 公开资料"
+              },
+              "tool_argument_hash": "605a42203b408bd5",
+              "tool_output_summary": "# Dataset Control Sources\n\n本文件用于构造可复现的负例和边界样本。\n\nNo source in this dataset identifies an entity named Internal Project X.\n\nThe control source is used to evaluate whether an agent stops when the entity is underspecified.\n",
+              "tool_output_hash": "b4dd56415cf13018",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_final",
+              "state_before": "b00efa4a54f85da7",
+              "state_after": "b564198ccd5bd966",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "final_output"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": "completed",
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": null,
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "termination": {
+            "name": "termination",
+            "passed": true,
+            "status": "completed",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 13.061,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 1,
+            "tool_counts": {
+              "web_search": 1
+            },
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "react",
+              "react",
+              "react"
+            ],
+            "missing_nodes": [
+              "controller",
+              "planner",
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "react",
+            "react",
+            "react"
+          ],
+          "tool_calls": [
+            {
+              "step": 1,
+              "node": "react",
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2024 年研发费用 R&D expenses"
+              }
+            },
+            {
+              "step": 2,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {}
+            },
+            {
+              "step": 3,
+              "node": "react",
+              "tool_name": "calculator",
+              "tool_arguments": {}
+            }
+          ],
+          "tool_arguments": [
+            {
+              "query": "Apple 2024 年研发费用 R&D expenses"
+            },
+            {},
+            {}
+          ],
+          "final_output": "",
+          "wall_time_sec": 30.003,
+          "trace": [
+            {
+              "variant": "linear_react_baseline",
+              "step": 1,
+              "action": "react_tool",
+              "state_before": "8ad0ee755cdddbc2",
+              "state_after": "14691ef0cfd7a271",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "web_search",
+              "tool_arguments": {
+                "query": "Apple 2024 年研发费用 R&D expenses"
+              },
+              "tool_argument_hash": "3b0fcf2b725748df",
+              "tool_output_summary": "# Apple 与 Microsoft 2024 财务快照\n\n本文件用于 Agent 评测数据集的离线财报问答样本。金额单位均为百万美元。\n\n## Provenance\n\n- Apple source: Apple FY24 Q4 consolidated financial statements and Apple 2024 Form 10-K.\n- Microsoft source: Microsoft 2024 Annual Report.\n- Snapshot dat...",
+              "tool_output_hash": "74a0a9d9be81a22a",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 2,
+              "action": "react_tool",
+              "state_before": "14691ef0cfd7a271",
+              "state_after": "731027899744a07d",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            },
+            {
+              "variant": "linear_react_baseline",
+              "step": 3,
+              "action": "react_tool",
+              "state_before": "731027899744a07d",
+              "state_after": "b4553f3c0c8a7196",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "messages",
+                  "observations"
+                ]
+              },
+              "tool_name": "calculator",
+              "tool_arguments": {},
+              "tool_argument_hash": "44136fa355b3678a",
+              "tool_output_summary": "42",
+              "tool_output_hash": "8334c554c7276f59",
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.003s",
+          "planner_parse_error": false,
+          "empty_tasks": false,
+          "last_node": "react",
+          "last_action": "react_tool",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 3,
+          "last_tool_name": "calculator",
+          "last_tool_arguments": null,
+          "last_event_at": 1778840167.5002053,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 3,
+            "max_no_state_change_run": 0,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 30.003,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 3,
+            "tool_counts": {
+              "web_search": 1,
+              "calculator": 2
+            },
+            "duplicate_tool_call_count": 1,
+            "duplicate_tool_call_ratio": 0.3333333333333333
+          }
+        }
+      ]
+    },
+    "langgraph_react_worker": {
+      "summary": {
+        "case_count": 4,
+        "termination_rate": 0.0,
+        "loop_rate": 0.0,
+        "avg_tool_calls": 0.0,
+        "duplicate_tool_call_ratio": 0.0,
+        "max_step_violation_rate": 0.0,
+        "stuck_running_count": 4,
+        "timeout_count": 4,
+        "max_tool_rounds_hit_count": 0,
+        "llm_call_timeout_count": 0,
+        "tool_call_timeout_count": 0,
+        "human_input_required_count": 0,
+        "controlled_stop_count": 0,
+        "planner_parse_error_count": 0,
+        "empty_tasks_count": 4
+      },
+      "cases": [
+        {
+          "case_id": "loop_001",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_001",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.031,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "338ea423bfaaa57d",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 18561.437
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "8f6841fe6c24cef4",
+              "state_after": "8f6841fe6c24cef4",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.031s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840190.041827,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_001"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_001",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_001",
+            "wall_time_sec": 30.031,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_002",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_002",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.026,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "e1f3c557600c1d7f",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 11066.564
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "12b1d1fbefb7deb6",
+              "state_after": "12b1d1fbefb7deb6",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.026s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840212.5702772,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_002"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_002",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_002",
+            "wall_time_sec": 30.026,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_003",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_003",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.026,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "124005d20b0b835c",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 25759.921
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "1d81fba56d545d5a",
+              "state_after": "1d81fba56d545d5a",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.026s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840257.2935195,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_003"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_003",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_003",
+            "wall_time_sec": 30.026,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        },
+        {
+          "case_id": "loop_004",
+          "passed": false,
+          "status": "running",
+          "task_status": "running",
+          "stop_reason": "timeout",
+          "node_path": {
+            "name": "node_path",
+            "passed": false,
+            "case_id": "loop_004",
+            "observed_nodes": [
+              "controller",
+              "planner"
+            ],
+            "missing_nodes": [
+              "worker",
+              "reviewer"
+            ],
+            "unexpected_nodes": []
+          },
+          "node_path_observed": [
+            "controller",
+            "planner"
+          ],
+          "tool_calls": [],
+          "tool_arguments": [],
+          "final_output": "",
+          "wall_time_sec": 30.027,
+          "trace": [
+            {
+              "variant": "langgraph_react_worker",
+              "step": 1,
+              "action": "controller",
+              "state_before": "c2525861e9aea9b1",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {
+                "added": [],
+                "removed": [],
+                "changed": [
+                  "next_action"
+                ]
+              },
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 18365.593
+            },
+            {
+              "variant": "langgraph_react_worker",
+              "step": 2,
+              "action": "planner",
+              "state_before": "2ebd43ad0cf0ed14",
+              "state_after": "2ebd43ad0cf0ed14",
+              "state_diff": {},
+              "tool_name": null,
+              "tool_arguments": null,
+              "tool_argument_hash": null,
+              "tool_output_summary": null,
+              "tool_output_hash": null,
+              "error": null,
+              "stop_reason": null,
+              "elapsed_ms": 0.0
+            }
+          ],
+          "error": "case timed out after 30.027s",
+          "planner_parse_error": false,
+          "empty_tasks": true,
+          "last_node": "planner",
+          "last_action": "planner",
+          "last_task_statuses": {},
+          "last_ready_tasks": [],
+          "last_running_tasks": [],
+          "tool_call_count": 0,
+          "last_tool_name": null,
+          "last_tool_arguments": null,
+          "last_event_at": 1778840279.9241178,
+          "termination": {
+            "name": "termination",
+            "passed": false,
+            "status": "running",
+            "allowed_statuses": [
+              "END",
+              "completed",
+              "failed",
+              "suspended"
+            ],
+            "case_id": "loop_004"
+          },
+          "no_loop": {
+            "name": "no_loop",
+            "passed": true,
+            "case_id": "loop_004",
+            "total_steps": 2,
+            "max_no_state_change_run": 1,
+            "violations": {
+              "max_total_steps": null,
+              "same_tool_calls": {},
+              "same_tool_same_args": {},
+              "max_no_state_change_steps": null
+            }
+          },
+          "latency": {
+            "name": "latency",
+            "passed": true,
+            "case_id": "loop_004",
+            "wall_time_sec": 30.027,
+            "max_wall_time_sec": null
+          },
+          "tool_repetition": {
+            "name": "tool_repetition",
+            "tool_call_count": 0,
+            "tool_counts": {},
+            "duplicate_tool_call_count": 0,
+            "duplicate_tool_call_ratio": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "pairwise_deltas": {
+    "langgraph_state_machine__vs__linear_react_baseline": {
+      "avg_tool_calls": -2.0,
+      "case_count": 0,
+      "controlled_stop_count": 0,
+      "duplicate_tool_call_ratio": -0.375,
+      "empty_tasks_count": 4,
+      "human_input_required_count": 0,
+      "llm_call_timeout_count": 0,
+      "loop_rate": -0.25,
+      "max_step_violation_rate": 0.0,
+      "max_tool_rounds_hit_count": 0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 3,
+      "termination_rate": -0.75,
+      "timeout_count": 3,
+      "tool_call_timeout_count": 0
+    },
+    "langgraph_state_machine__vs__langgraph_react_worker": {
+      "avg_tool_calls": 0.0,
+      "case_count": 0,
+      "controlled_stop_count": 0,
+      "duplicate_tool_call_ratio": 0.0,
+      "empty_tasks_count": 0,
+      "human_input_required_count": 0,
+      "llm_call_timeout_count": 0,
+      "loop_rate": 0.0,
+      "max_step_violation_rate": 0.0,
+      "max_tool_rounds_hit_count": 0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 0,
+      "termination_rate": 0.0,
+      "timeout_count": 0,
+      "tool_call_timeout_count": 0
+    },
+    "langgraph_react_worker__vs__linear_react_baseline": {
+      "avg_tool_calls": -2.0,
+      "case_count": 0,
+      "controlled_stop_count": 0,
+      "duplicate_tool_call_ratio": -0.375,
+      "empty_tasks_count": 4,
+      "human_input_required_count": 0,
+      "llm_call_timeout_count": 0,
+      "loop_rate": -0.25,
+      "max_step_violation_rate": 0.0,
+      "max_tool_rounds_hit_count": 0,
+      "planner_parse_error_count": 0,
+      "stuck_running_count": 3,
+      "termination_rate": -0.75,
+      "timeout_count": 3,
+      "tool_call_timeout_count": 0
+    }
+  }
+}

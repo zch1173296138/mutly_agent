@@ -181,6 +181,28 @@ async def test_langgraph_runner_executes_case_and_captures_trace():
     assert result.stop_reason == STOP_COMPLETED
 
 
+def test_langgraph_runner_records_event_elapsed_ms_and_last_event_at():
+    from evals.scripts.run_eval_langgraph import mock_tool_registry_module
+
+    case = case_by_id("rag_001")
+    model, tools = make_adapters(
+        case,
+        script=[
+            {"content": '{"intent": "complex_research"}'},
+            {"content": '[{"task_id":"t1","description":"retrieve evidence","dependencies":[]}]'},
+            {"content": "worker direct answer"},
+        ],
+    )
+    runner = LangGraphVariantRunner(model_adapter=model, tool_adapter=tools)
+
+    with mock_tool_registry_module(tools):
+        result = asyncio.run(runner.run_case(case))
+
+    assert result.trace
+    assert all(event.elapsed_ms is not None for event in result.trace)
+    assert runner.last_event_at is not None
+
+
 @pytest.mark.asyncio
 async def test_react_runner_executes_case_without_langgraph_nodes():
     case = case_by_id("rag_001")
@@ -289,6 +311,76 @@ async def test_langgraph_react_worker_loop_is_scored_from_observed_trace():
     assert result.stop_reason == STOP_LOOP_DETECTED
     assert score.loop_triggered is True
     assert score.triggered_by_tool is True
+
+
+def test_langgraph_react_worker_reports_max_tool_rounds_hit():
+    from evals.scripts.run_eval_langgraph import mock_tool_registry_module
+
+    case = dict(case_by_id("rag_001"))
+    case["loop_rules"] = {
+        "max_total_steps": 10,
+        "max_same_tool_calls": 10,
+        "max_same_tool_same_args": 10,
+        "max_no_state_change_steps": 10,
+    }
+    model, tools = make_adapters(
+        case,
+        script=[
+            {"content": '{"intent": "complex_research"}'},
+            {"content": '[{"task_id":"t1","description":"retrieve evidence","dependencies":[]}]'},
+            {
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {
+                            "name": "rag_search",
+                            "arguments": json.dumps({"query": case["user_query"]}, ensure_ascii=False),
+                        },
+                    }
+                ]
+            },
+        ],
+    )
+    runner = LangGraphReactWorkerRunner(model, tools, max_steps=1)
+
+    with mock_tool_registry_module(tools):
+        result = asyncio.run(runner.run_case(case))
+
+    assert result.stop_reason == "max_tool_rounds_hit"
+    assert any(event.action == "worker_tool" and event.tool_name == "rag_search" for event in result.trace)
+
+
+def test_graph_stop_reason_classifies_worker_timeout_errors():
+    from app.evaluation.agent_ab import _graph_stop_reason
+
+    case = dict(case_by_id("tool_002"))
+    case["category"] = "tool_failure"
+
+    assert (
+        _graph_stop_reason(
+            case,
+            {"tasks": {"task_1": {"status": "failed", "error": "llm_call_timeout: 180s"}}},
+            None,
+        )
+        == "llm_call_timeout"
+    )
+    assert (
+        _graph_stop_reason(
+            case,
+            {"tasks": {"task_1": {"status": "failed", "error": "tool_call_timeout: rag_search"}}},
+            None,
+        )
+        == "tool_call_timeout"
+    )
+    assert (
+        _graph_stop_reason(
+            case,
+            {"tasks": {"task_1": {"status": "completed", "error": "controlled_stop: enough"}}},
+            None,
+        )
+        == "controlled_stop"
+    )
 
 
 def test_langgraph_react_worker_no_progress_loop_is_scored_from_trace():

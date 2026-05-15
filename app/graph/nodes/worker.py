@@ -206,7 +206,7 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                 result = {"content": full_content, "tool_calls": tool_calls}
                 
             except asyncio.TimeoutError:
-                error_msg = f"LLM调用超时（{LLM_CALL_TIMEOUT}秒）"
+                error_msg = f"llm_call_timeout: LLM调用超时（{LLM_CALL_TIMEOUT}秒）"
                 logger.error(f"⏱️ [Worker] 任务 {task_id} 第 {round_idx + 1} 轮 - {error_msg}")
                 raise ValueError(error_msg)
             
@@ -233,7 +233,7 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                             if signal.get("cannot_complete"):
                                 reason = signal.get("reason", "需要用户信息补充")
                                 task.status = "suspended"
-                                task.error = reason
+                                task.error = f"human_input_required: {reason}"
                                 logger.error(
                                     f"⏸️ [Worker] 任务 {task_id} 主动挂起，等待用户补充信息: {reason}"
                                 )
@@ -243,6 +243,23 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                                     "tool_history": collected_tool_calls,
                                     "messages": [{"role": "assistant", "content": f"任务挂起需要补充信息：\n{reason}"}],
                                     "final_report": f"为了继续完成任务，我需要您补充以下信息：\n{reason}",
+                                }
+                            if signal.get("controlled_stop"):
+                                reason = signal.get("reason", raw_content)
+                                task.result = reason
+                                task.status = "completed"
+                                task.error = f"controlled_stop: {reason}"
+                                logger.info(
+                                    f"🛑 [Worker] 任务 {task_id} 主动控制停止：{reason}"
+                                )
+                                newly_ready = _compute_newly_ready(tasks, task_id)
+                                return {
+                                    "current_task_id": task_id,
+                                    "tasks": {task_id: task},
+                                    "tool_history": collected_tool_calls,
+                                    "task_results": {task_id: task.result or ""},
+                                    "ready_tasks": newly_ready,
+                                    "final_report": reason,
                                 }
 
                     except (json.JSONDecodeError, ValueError):
@@ -316,13 +333,13 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                 except asyncio.TimeoutError:
                     hitl_pending.pop(hitl_thread_id, None)
                     task.status = "failed"
-                    task.error = f"等待用户确认超时（{HITL_TIMEOUT}秒），任务已取消"
+                    task.error = f"human_input_required: 等待用户确认超时（{HITL_TIMEOUT}秒），任务已取消"
                     logger.error(f"⏱️ [Worker] HITL 超时，任务 {task_id} 取消")
                     return {"current_task_id": task_id, "tasks": {task_id: task}, "tool_history": collected_tool_calls}
 
                 if not approved:
                     task.status = "failed"
-                    task.error = "用户取消了操作，任务未执行"
+                    task.error = "human_input_required: 用户取消了操作，任务未执行"
                     logger.info(f"🚫 [Worker] 任务 {task_id} 被用户取消")
                     return {"current_task_id": task_id, "tasks": {task_id: task}, "tool_history": collected_tool_calls}
 
@@ -351,6 +368,13 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                 except asyncio.TimeoutError:
                     tool_output = f"工具调用超时（{TOOL_CALL_TIMEOUT}秒）"
                     logger.error(f"   ⏱️ 工具 [{tool_name}] 超时")
+                    return {
+                        "tc": tc,
+                        "tool_name": tool_name,
+                        "arguments": arguments,
+                        "output": tool_output,
+                        "error": "tool_call_timeout",
+                    }
                 except Exception as e:
                     tool_output = f"工具调用失败: {e}"
                     logger.error(f"   ❌ 工具 [{tool_name}] 失败: {e}")
@@ -359,7 +383,8 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                     "tc": tc,
                     "tool_name": tool_name,
                     "arguments": arguments,
-                    "output": tool_output
+                    "output": tool_output,
+                    "error": None,
                 }
 
             # 并行执行所有工具调用
@@ -367,6 +392,20 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
                 *[execute_single_tool(tc) for tc in tool_calls],
                 return_exceptions=False
             )
+            timed_out_tool = next(
+                (tr for tr in tool_results if tr.get("error") == "tool_call_timeout"),
+                None,
+            )
+            if timed_out_tool:
+                task.status = "failed"
+                task.error = f"tool_call_timeout: {timed_out_tool['tool_name']}"
+                collected_tool_calls.append(ToolCall(
+                    task_id=task_id,
+                    tool_name=timed_out_tool["tool_name"],
+                    arguments=json.dumps(timed_out_tool["arguments"], ensure_ascii=False),
+                    output=timed_out_tool["output"],
+                ))
+                return {"current_task_id": task_id, "tasks": {task_id: task}, "tool_history": collected_tool_calls}
             async def compress_tool_output(output: str, task_description: str) -> str:
                 if len(output) < 1000:
                     return output
@@ -403,7 +442,7 @@ async def worker_node(state: AgentState, config: RunnableConfig) -> dict:
         else:
             # for 循环正常耗尽（未 break），说明超过了最大轮数
             task.status = "failed"
-            task.error = f"超过最大工具调用轮数 ({MAX_TOOL_ROUNDS})，任务未能完成"
+            task.error = f"max_tool_rounds_hit: 超过最大工具调用轮数 ({MAX_TOOL_ROUNDS})，任务未能完成"
             logger.error(f"❌ [Worker] 任务 {task_id} 超过最大轮数，标记为失败")
             return {"current_task_id": task_id, "tasks": {task_id: task}}
 

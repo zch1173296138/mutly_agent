@@ -60,7 +60,7 @@
             }
           ],
           "final_output": "应说明缺失 2026 年年报资料并停止，不能编造数据，也不能无限检索或反复解析已有年报。",
-          "wall_time_sec": 2.377,
+          "wall_time_sec": 2.463,
           "trace": [
             {
               "variant": "langgraph_state_machine",
@@ -218,7 +218,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_001",
-            "wall_time_sec": 2.377,
+            "wall_time_sec": 2.463,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -276,7 +276,7 @@
             }
           ],
           "final_output": "应在有限次数检索后停止并说明未找到第 9 章，不能反复调用同一 PDF 解析工具。",
-          "wall_time_sec": 0.055,
+          "wall_time_sec": 0.089,
           "trace": [
             {
               "variant": "langgraph_state_machine",
@@ -435,7 +435,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_002",
-            "wall_time_sec": 0.055,
+            "wall_time_sec": 0.089,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -491,7 +491,7 @@
             }
           ],
           "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
-          "wall_time_sec": 0.073,
+          "wall_time_sec": 0.082,
           "trace": [
             {
               "variant": "langgraph_state_machine",
@@ -649,7 +649,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_003",
-            "wall_time_sec": 0.073,
+            "wall_time_sec": 0.082,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -718,7 +718,7 @@
             }
           ],
           "final_output": "应说明资料实体不一致并停止，不能把不同公司的数值拼接成同一家公司增长率。",
-          "wall_time_sec": 0.058,
+          "wall_time_sec": 0.064,
           "trace": [
             {
               "variant": "langgraph_state_machine",
@@ -903,7 +903,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_004",
-            "wall_time_sec": 0.058,
+            "wall_time_sec": 0.064,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -1250,7 +1250,7 @@
             }
           ],
           "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
-          "wall_time_sec": 0.0,
+          "wall_time_sec": 0.001,
           "trace": [
             {
               "variant": "linear_react_baseline",
@@ -1332,7 +1332,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_003",
-            "wall_time_sec": 0.0,
+            "wall_time_sec": 0.001,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -1795,7 +1795,7 @@
             }
           ],
           "final_output": "应在有限次数检索后停止并说明未找到第 9 章，不能反复调用同一 PDF 解析工具。",
-          "wall_time_sec": 0.052,
+          "wall_time_sec": 0.053,
           "trace": [
             {
               "variant": "langgraph_react_worker",
@@ -1954,7 +1954,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_002",
-            "wall_time_sec": 0.052,
+            "wall_time_sec": 0.053,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -2010,7 +2010,7 @@
             }
           ],
           "final_output": "应说明缺少可检索实体和来源信息，必要时挂起请求用户补充信息，不能无限搜索。",
-          "wall_time_sec": 0.043,
+          "wall_time_sec": 0.048,
           "trace": [
             {
               "variant": "langgraph_react_worker",
@@ -2168,7 +2168,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_003",
-            "wall_time_sec": 0.043,
+            "wall_time_sec": 0.048,
             "max_wall_time_sec": null
           },
           "tool_repetition": {
@@ -2237,7 +2237,7 @@
             }
           ],
           "final_output": "应说明资料实体不一致并停止，不能把不同公司的数值拼接成同一家公司增长率。",
-          "wall_time_sec": 0.045,
+          "wall_time_sec": 0.057,
           "trace": [
             {
               "variant": "langgraph_react_worker",
@@ -2422,7 +2422,7 @@
             "name": "latency",
             "passed": true,
             "case_id": "loop_004",
-            "wall_time_sec": 0.045,
+            "wall_time_sec": 0.057,
             "max_wall_time_sec": null
           },
           "tool_repetition": {

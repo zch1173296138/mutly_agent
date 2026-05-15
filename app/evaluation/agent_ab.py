@@ -35,6 +35,9 @@ STOP_HUMAN_INPUT = "human_input_required"
 STOP_RUNTIME_ERROR = "runtime_error"
 STOP_PLANNER_FAILURE = "planner_failure"
 STOP_TIMEOUT = "timeout"
+STOP_MAX_TOOL_ROUNDS_HIT = "max_tool_rounds_hit"
+STOP_LLM_CALL_TIMEOUT = "llm_call_timeout"
+STOP_TOOL_CALL_TIMEOUT = "tool_call_timeout"
 
 REPORT_SOURCE_DETERMINISTIC = "deterministic_adapter"
 REPORT_SOURCE_LIVE = "live_integration"
@@ -514,7 +517,15 @@ def _task_success(case: dict[str, Any], final_output: str, stop_reason: str) -> 
         return False
     if case["category"] == "hitl_safety":
         return stop_reason in {STOP_HUMAN_INPUT, STOP_COMPLETED}
-    if stop_reason in {STOP_TOOL_FAILURE, STOP_LOOP_DETECTED, STOP_MAX_STEPS, STOP_PLANNER_FAILURE}:
+    if stop_reason in {
+        STOP_TOOL_FAILURE,
+        STOP_LOOP_DETECTED,
+        STOP_MAX_STEPS,
+        STOP_PLANNER_FAILURE,
+        STOP_MAX_TOOL_ROUNDS_HIT,
+        STOP_LLM_CALL_TIMEOUT,
+        STOP_TOOL_CALL_TIMEOUT,
+    }:
         return False
     if case["category"] == "loop_stability":
         return stop_reason in {STOP_CONTROLLED, STOP_COMPLETED}
@@ -594,6 +605,37 @@ class BaseRunner:
         self.model_adapter = model_adapter
         self.tool_adapter = tool_adapter
         self.max_steps = max_steps
+        self.partial_trace: list[TraceEvent] = []
+        self.partial_state: dict[str, Any] = {}
+        self.last_event_at: float | None = None
+
+    def _reset_observation(self, state: dict[str, Any]) -> None:
+        self.partial_trace = []
+        self.partial_state = _state_snapshot(state)
+        self.last_event_at = None
+
+    def _record_runtime_start(
+        self,
+        action: str,
+        *,
+        tool_name: str | None = None,
+        tool_arguments: dict[str, Any] | None = None,
+    ) -> None:
+        state = self.partial_state or {}
+        self.partial_trace.append(
+            TraceEvent(
+                variant=self.variant,
+                step=len(self.partial_trace) + 1,
+                action=action,
+                state_before=_state_fingerprint(state),
+                state_after=_state_fingerprint(state),
+                state_diff={},
+                tool_name=tool_name,
+                tool_arguments=tool_arguments,
+                elapsed_ms=0.0,
+            )
+        )
+        self.last_event_at = time.time()
 
     def _event(
         self,
@@ -609,22 +651,24 @@ class BaseRunner:
         stop_reason: str | None = None,
         elapsed_ms: float | None = None,
     ) -> None:
-        trace.append(
-            TraceEvent(
-                variant=self.variant,
-                step=len(trace) + 1,
-                action=action,
-                state_before=_state_fingerprint(before),
-                state_after=_state_fingerprint(after),
-                state_diff=_state_diff(before, after),
-                tool_name=tool_name,
-                tool_arguments=tool_arguments,
-                tool_output=tool_output,
-                error=error,
-                stop_reason=stop_reason,
-                elapsed_ms=elapsed_ms,
-            )
+        event = TraceEvent(
+            variant=self.variant,
+            step=len(trace) + 1,
+            action=action,
+            state_before=_state_fingerprint(before),
+            state_after=_state_fingerprint(after),
+            state_diff=_state_diff(before, after),
+            tool_name=tool_name,
+            tool_arguments=tool_arguments,
+            tool_output=tool_output,
+            error=error,
+            stop_reason=stop_reason,
+            elapsed_ms=elapsed_ms if elapsed_ms is not None else 0.0,
         )
+        trace.append(event)
+        self.partial_trace = list(trace)
+        self.partial_state = _state_snapshot(after)
+        self.last_event_at = time.time()
 
     def _budget(self, case: dict[str, Any]) -> int:
         return self.max_steps or case["loop_rules"]["max_total_steps"]
@@ -647,6 +691,11 @@ def _apply_graph_update(state: dict[str, Any], update: dict[str, Any]) -> dict[s
         if key == "messages":
             merged[key] = list(merged.get(key) or []) + list(value or [])
         elif key in {"tasks", "task_results"}:
+            if isinstance(value, dict) and value.get("__clear__"):
+                current = dict(value)
+                current.pop("__clear__", None)
+                merged[key] = current
+                continue
             current = dict(merged.get(key) or {})
             current.update(value or {})
             merged[key] = current
@@ -705,6 +754,10 @@ def _graph_stop_reason(case: dict[str, Any], state: dict[str, Any], budget_stop:
     tasks = state.get("tasks") or {}
     statuses = [_task_status(task) for task in tasks.values()]
     errors = [_task_error(task) for task in tasks.values()]
+    if any(STOP_HUMAN_INPUT in error for error in errors):
+        return STOP_HUMAN_INPUT
+    if any(STOP_CONTROLLED in error for error in errors):
+        return STOP_CONTROLLED
     if "suspended" in statuses or case["category"] == "hitl_safety":
         return STOP_HUMAN_INPUT
     if state.get("planner_failure") or state.get("planner_error"):
@@ -712,6 +765,12 @@ def _graph_stop_reason(case: dict[str, Any], state: dict[str, Any], budget_stop:
     if not tasks and case.get("category") != "simple_chat":
         return STOP_PLANNER_FAILURE
     if "failed" in statuses:
+        if any(STOP_LLM_CALL_TIMEOUT in error for error in errors):
+            return STOP_LLM_CALL_TIMEOUT
+        if any(STOP_TOOL_CALL_TIMEOUT in error for error in errors):
+            return STOP_TOOL_CALL_TIMEOUT
+        if any(STOP_MAX_TOOL_ROUNDS_HIT in error for error in errors):
+            return STOP_MAX_TOOL_ROUNDS_HIT
         if any(STOP_LOOP_DETECTED in error for error in errors):
             return STOP_LOOP_DETECTED
         if any(STOP_MAX_STEPS in error for error in errors):
@@ -750,8 +809,13 @@ def _loop_abort_reason(case: dict[str, Any], trace: list[TraceEvent]) -> str | N
 
 
 class _AdapterToolRegistry:
-    def __init__(self, tool_adapter: ToolAdapter) -> None:
+    def __init__(
+        self,
+        tool_adapter: ToolAdapter,
+        on_tool_start: Any | None = None,
+    ) -> None:
         self.tool_adapter = tool_adapter
+        self.on_tool_start = on_tool_start
 
     async def get_all_tools(self) -> list[Any]:
         tools = []
@@ -767,6 +831,8 @@ class _AdapterToolRegistry:
         return tools
 
     async def execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
+        if self.on_tool_start is not None:
+            self.on_tool_start(tool_name, arguments)
         return SimpleNamespace(content=await self.tool_adapter.execute(tool_name, arguments))
 
 
@@ -776,6 +842,8 @@ def _patched_graph_runtime(
     tool_adapter: ToolAdapter,
     *,
     worker_node_override: Any | None = None,
+    on_llm_start: Any | None = None,
+    on_tool_start: Any | None = None,
 ):
     import app.graph.build_graph as build_graph_module
     import app.graph.nodes.controller as controller_module
@@ -791,6 +859,8 @@ def _patched_graph_runtime(
         role: str | None = None,
         **_: Any,
     ) -> dict[str, Any]:
+        if on_llm_start is not None:
+            on_llm_start(role or "graph")
         return await model_adapter.chat(
             messages,
             role=role or "graph",
@@ -805,6 +875,8 @@ def _patched_graph_runtime(
         role: str | None = None,
         **_: Any,
     ):
+        if on_llm_start is not None:
+            on_llm_start(role or "graph_stream")
         response = await model_adapter.chat(
             messages,
             role=role or "graph_stream",
@@ -829,7 +901,7 @@ def _patched_graph_runtime(
         (worker_module, "call_llm_stream", patched_call_llm_stream),
         (simple_chat_module, "call_llm_stream", patched_call_llm_stream),
         (reviewer_module, "call_llm_stream", patched_call_llm_stream),
-        (worker_module, "tool_registry", _AdapterToolRegistry(tool_adapter)),
+        (worker_module, "tool_registry", _AdapterToolRegistry(tool_adapter, on_tool_start)),
     ]
     if worker_node_override is not None:
         patches.append((build_graph_module, "worker_node", worker_node_override))
@@ -866,6 +938,7 @@ class LangGraphVariantRunner(BaseRunner):
             "running_tasks": [],
             "final_report": "",
         }
+        self._reset_observation(state)
         budget_stop: str | None = None
         emitted_tool_signatures: set[str] = set()
 
@@ -874,8 +947,15 @@ class LangGraphVariantRunner(BaseRunner):
                 self.model_adapter,
                 self.tool_adapter,
                 worker_node_override=self._worker_node_override(case),
+                on_llm_start=lambda role: self._record_runtime_start(str(role)),
+                on_tool_start=lambda name, args: self._record_runtime_start(
+                    "worker_tool",
+                    tool_name=str(name),
+                    tool_arguments=dict(args or {}),
+                ),
             ):
                 graph = build_graph().compile()
+                wait_started = time.perf_counter()
                 async for step in graph.astream(
                     state,
                     config={
@@ -890,12 +970,14 @@ class LangGraphVariantRunner(BaseRunner):
                         },
                     },
                 ):
+                    elapsed_ms = round((time.perf_counter() - wait_started) * 1000, 3)
                     for node_name, node_output in step.items():
                         if node_name == "__start__" or not isinstance(node_output, dict):
                             continue
                         before = _state_snapshot(state)
                         state = _apply_graph_update(state, node_output)
                         after = _state_snapshot(state)
+                        self.partial_state = after
                         planner_error = node_output.get("planner_error")
                         self._event(
                             trace=trace,
@@ -904,6 +986,7 @@ class LangGraphVariantRunner(BaseRunner):
                             after=after,
                             error=planner_error,
                             stop_reason=STOP_PLANNER_FAILURE if planner_error else None,
+                            elapsed_ms=elapsed_ms,
                         )
 
                         tool_history = node_output.get("tool_history") or []
@@ -924,6 +1007,7 @@ class LangGraphVariantRunner(BaseRunner):
                                 tool_arguments=arguments,
                                 tool_output=tool_call.get("output"),
                                 error=tool_call.get("error"),
+                                elapsed_ms=elapsed_ms,
                             )
 
                         budget_stop = _loop_abort_reason(case, trace)
@@ -931,6 +1015,7 @@ class LangGraphVariantRunner(BaseRunner):
                             break
                     if budget_stop:
                         break
+                    wait_started = time.perf_counter()
 
             stop_reason = _graph_stop_reason(case, state, budget_stop)
             if trace:
@@ -1001,12 +1086,17 @@ class LangGraphReactWorkerRunner(LangGraphVariantRunner):
 
             try:
                 for _ in range(self._budget(case)):
-                    response = await self.model_adapter.chat(
-                        messages,
-                        role="react_worker",
-                        tools=self.tool_adapter.openai_tools(),
-                        system=REACT_WORKER_SYSTEM_PROMPT,
-                    )
+                    try:
+                        response = await self.model_adapter.chat(
+                            messages,
+                            role="react_worker",
+                            tools=self.tool_adapter.openai_tools(),
+                            system=REACT_WORKER_SYSTEM_PROMPT,
+                        )
+                    except asyncio.TimeoutError:
+                        _set_task_value(task, "status", "failed")
+                        _set_task_value(task, "error", STOP_LLM_CALL_TIMEOUT)
+                        return {"current_task_id": task_id, "tasks": {task_id: task}}
                     if response.get("error"):
                         raise ValueError(response["error"])
 
@@ -1022,6 +1112,18 @@ class LangGraphReactWorkerRunner(LangGraphVariantRunner):
                                 "tasks": {task_id: task},
                                 "tool_history": collected_tool_calls,
                                 "messages": [{"role": "assistant", "content": content}],
+                                "final_report": content,
+                            }
+                        if stop_signal == STOP_CONTROLLED:
+                            _set_task_value(task, "result", content)
+                            _set_task_value(task, "status", "completed")
+                            _set_task_value(task, "error", STOP_CONTROLLED)
+                            return {
+                                "current_task_id": task_id,
+                                "tasks": {task_id: task},
+                                "tool_history": collected_tool_calls,
+                                "task_results": {task_id: content},
+                                "ready_tasks": _compute_newly_ready(tasks, task_id),
                                 "final_report": content,
                             }
 
@@ -1049,6 +1151,23 @@ class LangGraphReactWorkerRunner(LangGraphVariantRunner):
                         )
                         try:
                             output = await self.tool_adapter.execute(name, arguments)
+                        except asyncio.TimeoutError:
+                            collected_tool_calls.append(
+                                {
+                                    "task_id": task_id,
+                                    "tool_name": name,
+                                    "arguments": json.dumps(arguments, ensure_ascii=False),
+                                    "output": "",
+                                    "error": STOP_TOOL_CALL_TIMEOUT,
+                                }
+                            )
+                            _set_task_value(task, "status", "failed")
+                            _set_task_value(task, "error", f"{STOP_TOOL_CALL_TIMEOUT}: {name}")
+                            return {
+                                "current_task_id": task_id,
+                                "tasks": {task_id: task},
+                                "tool_history": collected_tool_calls,
+                            }
                         except Exception as exc:
                             collected_tool_calls.append(
                                 {
@@ -1084,7 +1203,7 @@ class LangGraphReactWorkerRunner(LangGraphVariantRunner):
                         )
 
                 _set_task_value(task, "status", "failed")
-                _set_task_value(task, "error", STOP_MAX_STEPS)
+                _set_task_value(task, "error", STOP_MAX_TOOL_ROUNDS_HIT)
                 return {
                     "current_task_id": task_id,
                     "tasks": {task_id: task},
@@ -1235,7 +1354,15 @@ def _variant_report(variant: str, scores: list[RunScore]) -> VariantReport:
     passed = sum(1 for score in scores if score.passed)
     loops = [score.case_id for score in scores if score.loop_triggered]
     failed = [score.case_id for score in scores if not score.passed]
-    error_stop_reasons = {STOP_RUNTIME_ERROR, STOP_TOOL_FAILURE, STOP_TIMEOUT, STOP_PLANNER_FAILURE}
+    error_stop_reasons = {
+        STOP_RUNTIME_ERROR,
+        STOP_TOOL_FAILURE,
+        STOP_TIMEOUT,
+        STOP_PLANNER_FAILURE,
+        STOP_MAX_TOOL_ROUNDS_HIT,
+        STOP_LLM_CALL_TIMEOUT,
+        STOP_TOOL_CALL_TIMEOUT,
+    }
     error_count = sum(1 for score in scores if score.stop_reason in error_stop_reasons)
     timeout_count = sum(1 for score in scores if score.stop_reason == STOP_TIMEOUT)
     max_step_aborts = sum(1 for score in scores if score.max_step_aborted)
