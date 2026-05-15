@@ -80,11 +80,34 @@ python evals/scripts/run_eval_local.py --dataset evals/datasets/generated/multy_
 
 ## 真实 LangGraph Eval
 
+正向 smoke test 默认使用 stable mock LLM，不依赖真实 API key：
+
 ```bash
 python evals/scripts/run_eval_langgraph.py \
   --dataset evals/datasets/formal/formal_loop_minimal.jsonl \
   --mock-tools \
+  --timeout-sec 120
+```
+
+负向 loop control 用于确认 loop evaluator 能抓到重复工具调用：
+
+```bash
+python evals/scripts/run_eval_langgraph.py \
+  --dataset evals/datasets/formal/formal_loop_minimal.jsonl \
+  --variant langgraph_state_machine \
+  --mock-tools \
   --mock-llm-loop \
+  --timeout-sec 120
+```
+
+真实 LLM + mock tools 用于只验证模型决策，不启动 MCP 工具：
+
+```bash
+python evals/scripts/run_eval_langgraph.py \
+  --dataset evals/datasets/formal/formal_loop_minimal.jsonl \
+  --variant langgraph_state_machine \
+  --mock-tools \
+  --real-llm \
   --timeout-sec 120
 ```
 
@@ -92,10 +115,14 @@ python evals/scripts/run_eval_langgraph.py \
 
 运行模式：
 
+- `--variant`：选择 `langgraph_state_machine`、`linear_react_baseline` 或 `langgraph_react_worker`。
 - `--mock-tools`：使用进程内确定性工具，不启动 MCP，也不依赖外部 API key。
-- `--mock-llm-loop`：使用确定性 LLM，按 case 期望工具生成可复现的工具调用序列，用于 smoke test 和 loop evaluator 验证。
-- 不传 mock 参数时，runner 会使用真实 LLM 配置和真实 MCP 工具注册表；本机需要配置 `OPENAI_API_KEY`、模型环境变量和 `mcp_servers.json`。
+- `--mock-llm-stable`：默认模式。使用确定性 LLM，最多调用一次 expected tools，然后返回 `gold_behavior`。
+- `--mock-llm-loop`：负向控制模式。使用确定性 LLM 重复调用 expected tools，用于验证 loop evaluator。
+- `--real-llm`：使用真实 LLM 配置；本机需要配置 `OPENAI_API_KEY` 和模型环境变量。
 - `--timeout-sec`：限制单条 case 的最大执行时间；超时 case 会以 `running` 状态写入 report，计入 `stuck_running_count`。
+
+`--mock-llm-stable`、`--mock-llm-loop`、`--real-llm` 三选一；不传时默认 `--mock-llm-stable`。只有同时使用真实 LLM 和真实工具时，report 的 `evidentiary` 才为 `true`；纯 mock report 会标为 `evidentiary: false`。
 
 示例输出仍包含：
 

@@ -7,6 +7,7 @@ import sys
 import time
 import types
 from collections import Counter
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,9 @@ sys.path.insert(0, str(ROOT))
 
 from app.evaluation.agent_ab import (
     DeterministicToolAdapter,
+    LangGraphReactWorkerRunner,
     LangGraphVariantRunner,
+    LinearReActRunner,
     LiveModelAdapter,
     LiveToolAdapter,
     STOP_COMPLETED,
@@ -26,6 +29,9 @@ from app.evaluation.agent_ab import (
     STOP_RUNTIME_ERROR,
     STOP_TIMEOUT,
     STOP_TOOL_FAILURE,
+    VARIANT_LANGGRAPH,
+    VARIANT_LANGGRAPH_REACT_WORKER,
+    VARIANT_REACT,
 )
 from evals.evaluators.common import event_node, trace_events
 from evals.evaluators.latency import evaluate_latency
@@ -36,6 +42,15 @@ from evals.evaluators.tool_repetition import summarize_tool_repetition
 
 
 COMMON_MOCK_TOOLS = {"rag_search", "pdf_parser", "calculator", "local_file_read", "web_search"}
+LLM_MODE_MOCK_STABLE = "mock_llm_stable"
+LLM_MODE_MOCK_LOOP = "mock_llm_loop"
+LLM_MODE_REAL = "real_llm"
+RUNNER_MODE_SINGLE_VARIANT = "single_variant"
+RUNNER_VARIANTS = {
+    VARIANT_LANGGRAPH: LangGraphVariantRunner,
+    VARIANT_LANGGRAPH_REACT_WORKER: LangGraphReactWorkerRunner,
+    VARIANT_REACT: LinearReActRunner,
+}
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -115,7 +130,7 @@ class CaseAwareMockModelAdapter:
             }
             return {"content": json.dumps([task], ensure_ascii=False), "tool_calls": None}
 
-        if role == "worker":
+        if role in {"worker", "react", "react_worker"}:
             if self.expected_tools:
                 if self.loop_mode and call_index <= self.loop_tool_rounds:
                     return {
@@ -145,7 +160,8 @@ def build_mock_tool_adapter(case: dict[str, Any]) -> DeterministicToolAdapter:
     return adapter
 
 
-def install_mock_tool_registry_module(tool_adapter: DeterministicToolAdapter) -> None:
+@contextmanager
+def mock_tool_registry_module(tool_adapter: DeterministicToolAdapter):
     class _MockToolRegistry:
         async def get_all_tools(self) -> list[Any]:
             tools = []
@@ -165,7 +181,16 @@ def install_mock_tool_registry_module(tool_adapter: DeterministicToolAdapter) ->
 
     module = types.ModuleType("app.infrastructure.setup")
     module.tool_registry = _MockToolRegistry()
+    sentinel = object()
+    original = sys.modules.get("app.infrastructure.setup", sentinel)
     sys.modules["app.infrastructure.setup"] = module
+    try:
+        yield
+    finally:
+        if original is sentinel:
+            sys.modules.pop("app.infrastructure.setup", None)
+        else:
+            sys.modules["app.infrastructure.setup"] = original
 
 
 def status_from_stop_reason(stop_reason: str | None) -> str:
@@ -281,21 +306,27 @@ async def run_case(
     case: dict[str, Any],
     *,
     mock_tools: bool,
-    mock_llm_loop: bool,
+    llm_mode: str,
+    variant: str,
     timeout_sec: float,
     live_tool_adapter: LiveToolAdapter | None,
 ) -> dict[str, Any]:
-    model_adapter = CaseAwareMockModelAdapter(case, loop_mode=mock_llm_loop) if mock_llm_loop else LiveModelAdapter()
+    if llm_mode == LLM_MODE_REAL:
+        model_adapter = LiveModelAdapter()
+    else:
+        model_adapter = CaseAwareMockModelAdapter(case, loop_mode=llm_mode == LLM_MODE_MOCK_LOOP)
+
     tool_adapter = build_mock_tool_adapter(case) if mock_tools else live_tool_adapter
-    if mock_tools:
-        install_mock_tool_registry_module(tool_adapter)
     if tool_adapter is None:
         tool_adapter = await LiveToolAdapter.create()
 
-    runner = LangGraphVariantRunner(model_adapter=model_adapter, tool_adapter=tool_adapter)
+    runner_cls = RUNNER_VARIANTS[variant]
+    runner = runner_cls(model_adapter=model_adapter, tool_adapter=tool_adapter)
     started = time.perf_counter()
     try:
-        result = await asyncio.wait_for(runner.run_case(case), timeout=timeout_sec)
+        registry_context = mock_tool_registry_module(tool_adapter) if mock_tools else nullcontext()
+        with registry_context:
+            result = await asyncio.wait_for(runner.run_case(case), timeout=timeout_sec)
     except asyncio.TimeoutError:
         return evaluate_run(case, timeout_run(case, round(time.perf_counter() - started, 3)))
 
@@ -315,7 +346,8 @@ async def run_dataset(args: argparse.Namespace) -> dict[str, Any]:
             await run_case(
                 case,
                 mock_tools=args.mock_tools,
-                mock_llm_loop=args.mock_llm_loop,
+                llm_mode=args.llm_mode,
+                variant=args.variant,
                 timeout_sec=args.timeout_sec,
                 live_tool_adapter=live_tool_adapter,
             )
@@ -332,12 +364,31 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run real LangGraph eval over a JSONL dataset.")
     parser.add_argument("--dataset", required=True, type=Path)
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--variant", choices=sorted(RUNNER_VARIANTS), default=VARIANT_LANGGRAPH)
     parser.add_argument("--mock-tools", action="store_true", help="Use deterministic in-process tools.")
-    parser.add_argument(
+    llm_group = parser.add_mutually_exclusive_group()
+    llm_group.add_argument(
+        "--mock-llm-stable",
+        dest="llm_mode",
+        action="store_const",
+        const=LLM_MODE_MOCK_STABLE,
+        help="Use a deterministic LLM that calls expected tools once, then returns gold_behavior.",
+    )
+    llm_group.add_argument(
         "--mock-llm-loop",
-        action="store_true",
+        dest="llm_mode",
+        action="store_const",
+        const=LLM_MODE_MOCK_LOOP,
         help="Use a deterministic LLM that repeats tool calls before stopping.",
     )
+    llm_group.add_argument(
+        "--real-llm",
+        dest="llm_mode",
+        action="store_const",
+        const=LLM_MODE_REAL,
+        help="Use the configured real LLM client. Requires API/model environment variables.",
+    )
+    parser.set_defaults(llm_mode=LLM_MODE_MOCK_STABLE)
     parser.add_argument("--timeout-sec", type=float, default=120.0)
     return parser.parse_args()
 
@@ -345,6 +396,14 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     report = asyncio.run(run_dataset(args))
+    report = {
+        "runner_mode": RUNNER_MODE_SINGLE_VARIANT,
+        "mock_tools": args.mock_tools,
+        "llm_mode": args.llm_mode,
+        "variant": args.variant,
+        "evidentiary": args.llm_mode == LLM_MODE_REAL and not args.mock_tools,
+        **report,
+    }
     output = json.dumps(report, ensure_ascii=False, indent=2)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
