@@ -14,6 +14,13 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
+def expected_tools_for_metadata(case: dict[str, Any]) -> list[str]:
+    legacy_tools = list(case.get("expected_tools") or [])
+    if legacy_tools:
+        return legacy_tools
+    return list(case.get("expected_project_tools") or []) + list(case.get("expected_source_tools") or [])
+
+
 def example_from_case(case: dict[str, Any]) -> dict[str, Any]:
     return {
         "inputs": {"user_query": case["user_query"]},
@@ -27,7 +34,10 @@ def example_from_case(case: dict[str, Any]) -> dict[str, Any]:
             "source": case.get("source"),
             "loop_rules": case.get("loop_rules"),
             "expected_nodes": case.get("expected_nodes"),
-            "expected_tools": case.get("expected_tools"),
+            "expected_tool_categories": list(case.get("expected_tool_categories") or []),
+            "expected_project_tools": list(case.get("expected_project_tools") or []),
+            "expected_source_tools": list(case.get("expected_source_tools") or []),
+            "expected_tools": expected_tools_for_metadata(case),
         },
     }
 

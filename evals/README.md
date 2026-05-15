@@ -78,6 +78,34 @@ python evals/scripts/run_eval_local.py --dataset evals/datasets/generated/multy_
 
 当前本地脚本使用确定性 trace fixture，只用于验证 evaluator 与数据契约。接入真实 LangGraph 或 ReAct runner 后，应保留相同输出指标。
 
+## 真实 LangGraph Eval
+
+```bash
+python evals/scripts/run_eval_langgraph.py \
+  --dataset evals/datasets/formal/formal_loop_minimal.jsonl \
+  --mock-tools \
+  --mock-llm-loop \
+  --timeout-sec 120
+```
+
+`run_eval_langgraph.py` 会读取 JSONL case，调用项目里的真实 `build_graph().compile()` LangGraph 入口，并把执行过程转换为与 `run_eval_local.py` 兼容的 report JSON。每条 case 会记录 node path、tool calls、tool arguments、task status、final output 和 wall time，并复用 `termination`、`no_loop`、`node_path`、`latency`、`tool_repetition` evaluator 生成 summary。
+
+运行模式：
+
+- `--mock-tools`：使用进程内确定性工具，不启动 MCP，也不依赖外部 API key。
+- `--mock-llm-loop`：使用确定性 LLM，按 case 期望工具生成可复现的工具调用序列，用于 smoke test 和 loop evaluator 验证。
+- 不传 mock 参数时，runner 会使用真实 LLM 配置和真实 MCP 工具注册表；本机需要配置 `OPENAI_API_KEY`、模型环境变量和 `mcp_servers.json`。
+- `--timeout-sec`：限制单条 case 的最大执行时间；超时 case 会以 `running` 状态写入 report，计入 `stuck_running_count`。
+
+示例输出仍包含：
+
+- `termination_rate`
+- `loop_rate`
+- `avg_tool_calls`
+- `duplicate_tool_call_ratio`
+- `max_step_violation_rate`
+- `stuck_running_count`
+
 ## 同步到 LangSmith
 
 先 dry-run 检查转换结果：
@@ -95,7 +123,9 @@ python evals/scripts/sync_langsmith.py \
 
 - `inputs = {"user_query": ...}`
 - `reference_outputs = {"gold_behavior": ..., "gold_answer": ...}`
-- `metadata = category, difficulty, source, loop_rules, expected_nodes, expected_tools`
+- `metadata = category, difficulty, source, loop_rules, expected_nodes, expected_tool_categories, expected_project_tools, expected_source_tools, expected_tools`
+
+`expected_tools` 是兼容字段：旧数据集已有该字段时保留原值；新 split 数据集会由 `expected_project_tools + expected_source_tools` 拼接得到。
 
 ## Open-source Dataset License
 

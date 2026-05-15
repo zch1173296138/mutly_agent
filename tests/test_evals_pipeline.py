@@ -118,8 +118,40 @@ def test_run_eval_local_outputs_required_summary_metrics():
     assert all("passed" in row for row in report["cases"])
 
 
+def test_run_eval_langgraph_smoke_outputs_required_summary_metrics():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "evals/scripts/run_eval_langgraph.py",
+            "--dataset",
+            str(FORMAL_DATASET),
+            "--mock-tools",
+            "--mock-llm-loop",
+            "--timeout-sec",
+            "30",
+        ],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    report = json.loads(completed.stdout)
+
+    assert report["summary"]["case_count"] == 4
+    for metric in {
+        "termination_rate",
+        "loop_rate",
+        "avg_tool_calls",
+        "duplicate_tool_call_ratio",
+        "max_step_violation_rate",
+        "stuck_running_count",
+    }:
+        assert metric in report["summary"]
+    assert len(report["cases"]) == 4
+
+
 def test_langsmith_example_conversion_contract():
-    from evals.scripts.sync_langsmith import example_from_case
+    from evals.scripts.sync_langsmith import example_from_case, expected_tools_for_metadata
 
     case = _load_jsonl(GENERATED_DATASET)[0]
     example = example_from_case(case)
@@ -131,6 +163,16 @@ def test_langsmith_example_conversion_contract():
     }
     assert example["metadata"]["category"] == case["category"]
     assert example["metadata"]["source"] == case["source"]
+
+    split_case = _load_jsonl(FORMAL_DATASET)[0]
+    split_example = example_from_case(split_case)
+    assert split_example["metadata"]["expected_tool_categories"] == split_case["expected_tool_categories"]
+    assert split_example["metadata"]["expected_project_tools"] == split_case["expected_project_tools"]
+    assert split_example["metadata"]["expected_source_tools"] == split_case["expected_source_tools"]
+    assert split_example["metadata"]["expected_tools"] == expected_tools_for_metadata(split_case)
+    assert expected_tools_for_metadata(
+        {"expected_tools": [], "expected_project_tools": ["project"], "expected_source_tools": ["source"]}
+    ) == ["project", "source"]
 
 
 def test_open_source_adapter_imports_real_local_sample_with_review_metadata(tmp_path):
